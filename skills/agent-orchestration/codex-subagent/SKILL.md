@@ -1,10 +1,12 @@
 ---
 name: codex-subagent
-description: Launch OpenAI Codex CLI as a subagent (ChatGPT subscription auth, no API key). Use when delegating a self-contained coding task to Codex from another agent — parallel implementation work, a second opinion, or an independent verification pass.
+description: 'LEGACY (not Stack A default). Launch OpenAI Codex CLI as a subagent. Stack A prefers grok-subagent (Grok 4.5) for hard execution. Use only when the user explicitly asks for Codex / GPT Sol.'
 disable-model-invocation: true
 ---
 
-# Codex CLI as a Subagent
+# Codex CLI as a Subagent (legacy / opt-in)
+
+> **Stack A:** default hard executor is **Grok 4.5** via `grok-subagent`. Use this skill only when the user explicitly wants OpenAI Codex.
 
 Codex CLI is OpenAI's terminal coding agent. `codex exec` runs it non-interactively:
 it works autonomously in a sandbox, streams progress to stderr, and prints only the
