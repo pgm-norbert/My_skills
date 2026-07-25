@@ -8,7 +8,7 @@ You are the **orchestrator**. Prefer this session on **Opus 5**. Follow these sk
 |------|--------|-----|
 | **Orchestrator** | **Opus 5** (this host session) | Plan, write briefs, integrate, verify, talk to the user |
 | **Hard executor** | **Grok 4.5** | Delegate via `grok-subagent` — separate **Grok CLI** process (`grok -p` / `--prompt-file -m grok-4.5`) |
-| **Routine executor** | DeepSeek V4 / Qwen3.6 local | Only with a complete brief + verification commands |
+| **Routine executor** | DeepSeek V4 / local Qwen (**Qwen3.6** → else **`qwen3.5:9b`**) | Only with a complete brief + verification commands |
 | **Reviewer** | Opposite of implementer | Grok built it → `opus-review`. Opus built it → `grok-review` |
 
 ## Rules

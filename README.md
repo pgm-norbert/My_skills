@@ -11,7 +11,7 @@ See **[STACK-A.md](./STACK-A.md)** for the full guide.
 |------|--------|
 | Orchestrator | **Opus 5** (host session) |
 | Hard executor | **Grok 4.5** (`grok-subagent` CLI) |
-| Routine executor | **DeepSeek V4** / **Qwen3.6 local** |
+| Routine executor | **DeepSeek V4** / local Qwen (**Qwen3.6** → else **`qwen3.5:9b`**) |
 | Reviewer | **Opus 5** *or* **Grok 4.5** (opposite of implementer) |
 
 Key skills:

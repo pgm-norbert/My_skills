@@ -11,7 +11,7 @@ Hard defaults for this skills pack. Override only if the user explicitly names a
 |------|--------|--------|
 | **Orchestrator** | **Opus 5** (host session) | The main agent you are talking to. Plans, splits work, integrates results, verifies before trust. |
 | **Hard executor** | **Grok 4.5** | Non-trivial implementation: multi-file features, hard bugs, refactors. Prefer `grok-subagent` (separate Grok CLI process). |
-| **Routine executor** | **DeepSeek V4** or **Qwen3.6 local** | Boilerplate, renames, tests-from-spec, mechanical edits — only with a complete brief + verification commands. |
+| **Routine executor** | **DeepSeek V4** or **local Qwen** (prefer **Qwen3.6**, else **qwen3.5:9b**) | Boilerplate, renames, tests-from-spec, mechanical edits — only with a complete brief + verification commands. |
 | **Reviewer** | **Opus 5 XOR Grok 4.5** | Must be a **different family** than the implementer. If Grok built it → Opus reviews. If Opus built it → Grok reviews. |
 
 ## Orchestrator rules
@@ -29,11 +29,25 @@ Hard defaults for this skills pack. Override only if the user explicitly names a
 - Full self-contained brief: goal, constraints, files, definition of done, how to verify.
 - After Grok finishes: read the summary, `git status` / diff, run verification yourself.
 
-### Routine work → DeepSeek V4 or Qwen3.6 local
+### Routine work → DeepSeek V4 or local Qwen
 
 - Only when the orchestrator already wrote a tight spec (files, invariants, acceptance tests).
 - Prefer a local/cheap coding agent or API the user has configured; if none is available, keep the work on Grok 4.5 rather than guessing.
 - Never use a routine model for security, auth, payments, data-loss risk, or ambiguous product work.
+
+#### Local Qwen selection (Ollama)
+
+When routing routine work to a **local Qwen** (not DeepSeek cloud):
+
+1. Prefer **Qwen3.6** if installed (`ollama list` shows a `qwen3.6` / `qwen3.6:*` tag).
+2. If Qwen3.6 is **not** available, use **`qwen3.5:9b`** (Ollama tag `qwen3.5:9b`).
+3. If neither is installed, do **not** invent another local model — fall back to **Grok 4.5** (or DeepSeek V4 if configured).
+
+Quick check:
+
+```bash
+ollama list | rg -i 'qwen3\.6|qwen3\.5:9b'
+```
 
 ### Banned as subagent defaults
 
@@ -67,7 +81,7 @@ Subagents are **not** “another model inside the same chat bubble” unless the
 
 - Orchestrator host: **Opus 5**
 - Hard executor: **Grok 4.5** via `grok-subagent` when possible
-- Routine executor: **DeepSeek V4** or **Qwen3.6 local** only with a complete brief
+- Routine executor: **DeepSeek V4** or **local Qwen** (Qwen3.6 → else **qwen3.5:9b**) only with a complete brief
 - Reviewer: **opposite family** of the implementer (`opus-review` vs `grok-review`)
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
 - NEVER default subagents to Composer / weak auto models
@@ -89,7 +103,7 @@ Consensus of Boris Cherny, Matt Pocock, Pietro Schirano, and Peter Steinberger:
 
 - Orchestrator host: **Opus 5**
 - Hard executor: **Grok 4.5** via `grok-subagent` when possible
-- Routine executor: **DeepSeek V4** or **Qwen3.6 local** only with a complete brief
+- Routine executor: **DeepSeek V4** or **local Qwen** (Qwen3.6 → else **qwen3.5:9b**) only with a complete brief
 - Reviewer: **opposite family** of the implementer (`opus-review` vs `grok-review`)
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
 - NEVER default subagents to Composer / weak auto models

@@ -8,7 +8,7 @@ Personal policy on top of the davidondrej-style agent skills in this repo.
 |------|--------|-------------------|
 | Orchestrator | **Opus 5** | Host session (Claude Code / Cursor on Opus) |
 | Hard executor | **Grok 4.5** | `grok-subagent` → separate Grok CLI process |
-| Routine executor | **DeepSeek V4** or **Qwen3.6 local** | Only with a complete brief + tests |
+| Routine executor | **DeepSeek V4** or **local Qwen** (prefer **Qwen3.6**, else **`qwen3.5:9b`**) | Only with a complete brief + tests |
 | Reviewer | **Opus 5 XOR Grok 4.5** | Opposite of implementer: `opus-review` / `grok-review` |
 
 ## Claude Code + Grok: what actually runs?
@@ -42,6 +42,18 @@ User (in Claude Code on Opus 5):
 4. Opus reads diff + runs tests.
 5. Opus runs **`opus-review`** only if a second Opus pass is needed for judgment **or** — if Opus itself implemented — runs **`grok-review`**. After Grok implemented, prefer a clean Opus review Task / fresh session (`opus-review`).
 6. Opus reports merge readiness to the user.
+
+## Local Qwen (routine executor)
+
+When using a **local** Qwen via Ollama for routine work:
+
+1. Prefer **Qwen3.6** if present (`ollama list` → `qwen3.6` / `qwen3.6:*`).
+2. Else use **`qwen3.5:9b`** (this machine’s installed fallback).
+3. Else do not guess another local model — use **Grok 4.5** (or DeepSeek V4 if configured).
+
+```bash
+ollama list | rg -i 'qwen3\.6|qwen3\.5:9b'
+```
 
 ## Install / sync
 
