@@ -1,91 +1,59 @@
 ---
 name: deepseek-subagent
-description: 'Launch DeepSeek V4 Pro as Stack A junior engineer (default implementer — does most coding work). Use when the orchestrator (Opus 5) delegates a self-contained coding task with a complete brief. After DeepSeek, route to Grok senior review then Opus sign-off.'
+description: 'Launch DeepSeek V4 Pro as Stack A junior engineer (default implementer — does most coding work). Preferred harness: Hermes Agent (already on this machine). Use when the orchestrator (Opus 5) delegates a self-contained coding task with a complete brief. After DeepSeek, route to Grok senior review then Opus sign-off.'
 disable-model-invocation: true
 ---
 
 # DeepSeek V4 Pro as Junior Engineer (Stack A)
 
-DeepSeek is Stack A’s **default implementer** (junior engineer). It does **most of the work** from a complete brief. Auth is the user’s DeepSeek API key via local env — **never print the key**.
+DeepSeek is Stack A’s **default implementer** (junior engineer). It does **most of the work** from a complete brief.
 
-Senior review/fix is **Grok 4.5**. Final sign-off is **Opus 5**.
+**On this machine the coding harness is Hermes Agent** (`hermes` CLI) — not Aider, not host Task model-routing. Hermes already supports `--provider deepseek` and tool-calling (edit files, run shell, etc.).
+
+Senior review/fix: **Grok 4.5**. Final sign-off: **Opus 5**.
 
 ## When to delegate
 
-- Self-contained coding task with clear success criteria (feature, fix, tests, refactor).
+- Self-contained coding task with clear success criteria (feature, fix, tests, refactor, investigate).
 - Bulk implementation while Opus stays free to plan and sign off.
-- Parallel independent tasks (one worktree / ownership set per run).
+- Parallel independent tasks (prefer `--worktree` / one cwd ownership set per run).
 
-Do NOT delegate tasks that need conversation context you can’t fully write into the prompt.
 Do NOT use DeepSeek as sole merge-gate reviewer or final sign-off.
 
 ## Credentials (never commit / never echo)
 
 ```bash
-# Preferred: local Stack A env (created on the user’s machine)
-source "$HOME/.config/stack-a/env"
-test -n "$DEEPSEEK_API_KEY" || { echo "MISSING DEEPSEEK_API_KEY — set ~/.config/stack-a/env"; exit 1; }
+# Stack A env (optional for Hermes — Hermes also reads ~/.hermes/.env)
+source "$HOME/.config/stack-a/env" 2>/dev/null || true
 
-# Defaults if unset:
-export DEEPSEEK_BASE_URL="${DEEPSEEK_BASE_URL:-https://api.deepseek.com}"
-export DEEPSEEK_MODEL="${DEEPSEEK_MODEL:-deepseek-chat}"   # V4 Pro API access; override if account uses another slug
+# Hermes must have DEEPSEEK_API_KEY in ~/.hermes/.env (already configured on this machine).
+# Verify without printing the key:
+rg -q '^DEEPSEEK_API_KEY=.' "$HOME/.hermes/.env" && echo "Hermes DeepSeek key: present"
 ```
 
-- Key file path: `~/.config/stack-a/env` (mode `600`).
-- **Never** paste the key into prompts, commits, skill files, or chat logs.
-- If key missing → stop and tell the user to configure `~/.config/stack-a/env`.
+- Preferred model slug: **`deepseek-v4-pro`** (API also offers `deepseek-v4-flash`).
+- Stack A env default: `DEEPSEEK_MODEL=deepseek-v4-pro`.
+- **Never** paste keys into prompts, commits, skill files, or chat logs.
 
 ## Preflight
 
 ```bash
-source "$HOME/.config/stack-a/env" 2>/dev/null || true
-test -n "$DEEPSEEK_API_KEY" && echo "DeepSeek key: present"
-echo "model=${DEEPSEEK_MODEL:-deepseek-chat} base=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}"
-# OpenAI-compatible smoke (no key in output):
-curl -sS -o /tmp/ds-models.json -w "%{http_code}" \
-  -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
-  "${DEEPSEEK_BASE_URL:-https://api.deepseek.com}/models" | tail -1
-# expect 200
+which hermes
+rg -q '^DEEPSEEK_API_KEY=.' "$HOME/.hermes/.env" || echo "MISSING: add DEEPSEEK_API_KEY to ~/.hermes/.env"
+# optional smoke (should print DEEPSEEK_OK):
+# hermes chat -Q --yolo --provider deepseek -m deepseek-v4-pro -q "Reply with exactly: DEEPSEEK_OK"
 ```
 
-## Launch patterns
+## Preferred launch — Hermes (default on this machine)
 
-DeepSeek exposes an **OpenAI-compatible** HTTP API. Prefer a coding-agent harness that can target a custom base URL. Pick the first available:
-
-### A) Aider (if installed)
+Write a full brief to a file, then run Hermes **non-interactive** from the **repo root** (`--yolo` auto-approves tools for trusted user-owned repos only):
 
 ```bash
-source "$HOME/.config/stack-a/env"
-OUT=$(mktemp /tmp/deepseek-out.XXXXXX)
+REPO=/path/to/repo
 PROMPT_FILE=$(mktemp /tmp/deepseek-prompt.XXXXXX)
-# write full brief into $PROMPT_FILE
+OUT=$(mktemp /tmp/deepseek-out.XXXXXX)
 
-cd /path/to/repo
-aider --yes \
-  --model "openai/${DEEPSEEK_MODEL}" \
-  --openai-api-base "$DEEPSEEK_BASE_URL" \
-  --openai-api-key "$DEEPSEEK_API_KEY" \
-  --message-file "$PROMPT_FILE" \
-  > "$OUT" 2>/tmp/deepseek-err.log
-```
-
-### B) Host Task / agent with DeepSeek model
-
-If the host product can run a subagent on **DeepSeek** (or OpenAI-compatible with base URL + key), use that with the same full brief. Still treat it as **junior** — Grok review + Opus sign-off after.
-
-### C) OpenAI-compatible CLI (`openai` / custom)
-
-```bash
-source "$HOME/.config/stack-a/env"
-export OPENAI_API_KEY="$DEEPSEEK_API_KEY"
-export OPENAI_BASE_URL="$DEEPSEEK_BASE_URL"
-# Then run whatever coding agent supports OPENAI_BASE_URL + OPENAI_API_KEY
-# with model $DEEPSEEK_MODEL
-```
-
-### Brief template (always)
-
-```markdown
+cat > "$PROMPT_FILE" <<'EOF'
 # Task
 (goal, constraints, files to touch, definition of done)
 
@@ -99,31 +67,77 @@ export OPENAI_BASE_URL="$DEEPSEEK_BASE_URL"
 - Short summary of what you changed
 - Commands you ran and results
 - Anything uncertain
+EOF
+
+cd "$REPO"
+# Non-interactive junior implementer:
+hermes chat -Q --yolo \
+  --provider deepseek \
+  -m deepseek-v4-pro \
+  --max-turns 40 \
+  -q "$(cat "$PROMPT_FILE")" \
+  > "$OUT" 2>/tmp/deepseek-err.log
+
+# Or pass a long brief via multiple -q is not ideal — prefer one -q with full text.
+cat "$OUT"
+git -C "$REPO" status --short
 ```
 
-DeepSeek sees **nothing** of the orchestrator conversation. Put everything in the brief.
+### Background (orchestrator polls)
+
+```bash
+nohup hermes chat -Q --yolo \
+  --provider deepseek \
+  -m deepseek-v4-pro \
+  --max-turns 40 \
+  -q "$(cat "$PROMPT_FILE")" \
+  > "$OUT" 2>/tmp/deepseek-err.log &
+echo "PID=$! OUT=$OUT"
+```
+
+### Flags that matter
+
+| Flag | Meaning |
+|------|---------|
+| `--provider deepseek` | Use DeepSeek API (not NVIDIA/Ollama default) |
+| `-m deepseek-v4-pro` | Junior model (use `deepseek-v4-flash` only if user wants cheaper/faster) |
+| `-q "..."` | Single-shot non-interactive query |
+| `-Q` | Quiet: final answer + session id |
+| `--yolo` | Auto-approve tools (trusted repos only) |
+| `--worktree` / `-w` | Isolated git worktree for parallel juniors |
+| `--max-turns N` | Cap tool loop |
+
+DeepSeek via Hermes sees **nothing** of the orchestrator chat — put everything in `-q` / the brief file.
+
+## Fallback harnesses (only if Hermes missing)
+
+1. **Aider** (install if needed): `uv tool install aider-chat` then `aider --model deepseek/deepseek-v4-pro` with `DEEPSEEK_API_KEY` set.
+2. **Host Task targeting DeepSeek** — only if the host can select DeepSeek (most cannot).
+3. Do **not** invent a custom agent loop mid-task if Hermes/Aider are unavailable — report **BLOCKED: no coding harness** and ask the user to install Hermes or Aider.
 
 ## After DeepSeek finishes
 
-1. Read the summary + `git -C /path/to/repo status` and diff.
-2. Run verification commands yourself (orchestrator).
-3. **Required next step for non-trivial work:** `grok-review` (senior), then fix via `grok-subagent` if needed.
-4. **Final:** Opus sign-off (`opus-review` / host Opus) before claiming done.
+1. Read `$OUT` + `git status` / diff.
+2. Run verification commands (orchestrator).
+3. **Required for non-trivial work:** `grok-review` → fix via `grok-subagent` if needed.
+4. **Final:** Opus sign-off (`opus-review`).
 
 ## Failure modes
 
 | Symptom | Fix |
 |---------|-----|
-| 401 / auth | Key wrong or missing in `~/.config/stack-a/env` |
-| Model not found | Adjust `DEEPSEEK_MODEL` (try `deepseek-chat` / account-specific slug) |
-| No coding harness | Install aider or use host Task; don’t invent a half-baked agent loop mid-task |
-| Rate limit | Report to user; don’t tight-loop |
+| Hermes uses wrong provider/model | Pass `--provider deepseek -m deepseek-v4-pro` explicitly |
+| Auth / 401 | `DEEPSEEK_API_KEY` missing from `~/.hermes/.env` |
+| Model not found | Use exact slugs from API: `deepseek-v4-pro` or `deepseek-v4-flash` |
+| Hangs / tool prompts | Add `--yolo` on trusted repos; raise `--max-turns` |
+| “No harness” | Install Hermes (`hermes`) or Aider — do not hand-roll agents mid-task |
 
 ## Rules
 
 - One task per launch. Split big jobs.
 - Junior only — never final sign-off.
-- Never log or commit `DEEPSEEK_API_KEY`.
+- Never log or commit API keys.
+- Default route when user says “use Stack A and delegate”: **this skill (Hermes + DeepSeek)**, not Ollama, not Grok-as-implementer.
 
 ## Relationship to other skills
 

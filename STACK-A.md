@@ -30,12 +30,17 @@ User
 
 - **Never** put API keys in skill markdown or git.
 - Local file: `~/.config/stack-a/env` (mode `600`), sourced from `~/.zshrc`.
-- Variables: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` (default `https://api.deepseek.com`), `DEEPSEEK_MODEL` (default `deepseek-chat` for V4 Pro API access).
+- Variables: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` (default `https://api.deepseek.com`), `DEEPSEEK_MODEL` (default **`deepseek-v4-pro`**).
+- **Coding harness (this machine):** **Hermes Agent** (`hermes chat --provider deepseek -m deepseek-v4-pro`). Key also lives in `~/.hermes/.env`.
+- Aider is optional fallback; host Task usually **cannot** target DeepSeek.
 
 ```bash
 source ~/.config/stack-a/env
 # key loaded? yes if non-empty — do not echo the value
 test -n "$DEEPSEEK_API_KEY" && echo "DeepSeek ready ($DEEPSEEK_MODEL)"
+
+# Junior one-shot from a repo (example):
+# hermes chat -Q --yolo --provider deepseek -m deepseek-v4-pro -q "…full brief…"
 ```
 
 ## Local Ollama — not the default path
