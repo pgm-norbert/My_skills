@@ -18,16 +18,19 @@ You are the **orchestrator**. Prefer this session on **Opus 5**. Follow these sk
 3. Grok senior-reviews and fixes serious issues  
 4. Opus final sign-off  
 
+**“Use Stack A and delegate”** → DeepSeek junior first. **Not** Ollama. **Not** Grok-as-default-implementer.
+
 ## Rules
 
-1. **Do not default** bulk coding to Composer, Sonnet, or Codex/GPT Sol. Default implementer is **DeepSeek V4 Pro**.
-2. **Codex** only if the user explicitly asks.
-3. Subagents start **blind** — full brief in the prompt file (goal, paths, constraints, verify commands).
-4. After DeepSeek: **Grok senior review**. After fixes: **Opus sign-off**. Never claim done without sign-off on non-trivial work.
-5. Reviewer reports **verbatim**.
-6. Do **not** launch subagents unless the user asks to delegate / parallelize, or the task is clearly large independent work.
-7. DeepSeek/Grok run as **separate processes / API agents** — not “inside” the Opus chat bubble.
-8. **Never** print or commit `DEEPSEEK_API_KEY`. Load via `source ~/.config/stack-a/env`.
+1. **Do not default** bulk coding to Composer, Sonnet, Codex, or **Ollama/local models**. Default implementer is **DeepSeek V4 Pro**.
+2. **Do not** run `ollama list` or pick local models unless the user asks for local **or** DeepSeek is proven down (then prefer Grok for non-trivial work).
+3. **Codex** only if the user explicitly asks.
+4. Subagents start **blind** — full brief in the prompt file (goal, paths, constraints, verify commands).
+5. After DeepSeek: **Grok senior review**. After fixes: **Opus sign-off**. Never claim done without sign-off on non-trivial work.
+6. Reviewer reports **verbatim**.
+7. Do **not** launch subagents unless the user asks to delegate / parallelize, or the task is clearly large independent work.
+8. DeepSeek/Grok run as **separate processes / API agents** — not “inside” the Opus chat bubble.
+9. **Never** print or commit `DEEPSEEK_API_KEY`. Load via `source ~/.config/stack-a/env`.
 
 ## When the user asks to implement something non-trivial
 

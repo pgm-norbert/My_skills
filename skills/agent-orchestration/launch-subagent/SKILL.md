@@ -45,14 +45,18 @@ Do **not** skip senior Grok review on non-trivial DeepSeek work. Do **not** clai
 - If Critical/Important issues: **`grok-subagent`** to fix (or tightly scoped re-brief to DeepSeek for tiny typos only).
 - Grok may also take **hard rescue** when DeepSeek is blocked (auth, multi-system design, security-sensitive work).
 
-### Tiny mechanical only → local Qwen (optional)
+### Local Ollama / Qwen — NOT default (almost never)
 
-- Only for trivial tasks when DeepSeek is down: **Qwen3.6** if installed, else **`qwen3.5:9b`**.
-- Not the default junior.
+- **Do not** run `ollama list`, pick a local model, or brief work “for local Qwen/Gemma” just because Ollama is installed.
+- **Do not** use local models for investigate / debug / implement when the user says “use Stack A” without naming a local model.
+- Local Qwen is **opt-in only**: user explicitly asks for local/Ollama **or** DeepSeek is **proven down** (missing key / 401 / API unreachable) **and** the task is tiny/mechanical.
+- If DeepSeek is down for a non-trivial task → escalate to **Grok 4.5** (senior), not Ollama.
+- Order when (and only when) local is allowed: **Qwen3.6** if installed, else **`qwen3.5:9b`**. Never invent other local picks (gemma, gpt-oss, etc.) unless the user names them.
 
 ### Banned as subagent defaults
 
 - Do **not** default implementers to Composer, Sonnet-class, or random auto-picks.
+- Do **not** default to **Ollama / local models** when Stack A is requested.
 - Do **not** use OpenAI Codex / GPT Sol as the Stack A default (legacy `codex-subagent` only if the user explicitly asks for Codex).
 
 ## Reviewer / sign-off rules
@@ -86,8 +90,9 @@ Do **not** skip senior Grok review on non-trivial DeepSeek work. Do **not** clai
 - Senior engineer: **Grok 4.5** review + fix (`grok-review` / `grok-subagent`)
 - Final sign-off: **Opus 5** (`opus-review`)
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
-- NEVER default subagents to Composer / weak auto models
+- NEVER default subagents to Composer / weak auto models / Ollama
 - only ever use Stack A models above unless the user overrides
+- Default route when user says “use Stack A and delegate”: **DeepSeek junior** (not Grok first, not Ollama)
 
 ## General Subagent Principles
 
@@ -108,5 +113,6 @@ Consensus of Boris Cherny, Matt Pocock, Pietro Schirano, and Peter Steinberger:
 - Senior engineer: **Grok 4.5** review + fix (`grok-review` / `grok-subagent`)
 - Final sign-off: **Opus 5** (`opus-review`)
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
-- NEVER default subagents to Composer / weak auto models
+- NEVER default subagents to Composer / weak auto models / Ollama
 - only ever use Stack A models above unless the user overrides
+- Default route when user says “use Stack A and delegate”: **DeepSeek junior** (not Grok first, not Ollama)

@@ -38,22 +38,27 @@ source ~/.config/stack-a/env
 test -n "$DEEPSEEK_API_KEY" && echo "DeepSeek ready ($DEEPSEEK_MODEL)"
 ```
 
-## Local Qwen (optional cheap path)
+## Local Ollama — not the default path
 
-Only for **tiny** mechanical tasks when DeepSeek is unavailable and the brief is trivial:
+**Stack A does not mean “use local models.”** Ollama being installed is irrelevant unless the user asks for local.
 
-1. Prefer **Qwen3.6** if in Ollama.
-2. Else **`qwen3.5:9b`**.
-3. Else skip local — use DeepSeek or Grok.
+| User says | Route |
+|-----------|--------|
+| “use Stack A and delegate …” | **DeepSeek V4 Pro** junior → Grok senior → Opus sign-off |
+| “use local / Ollama / qwen …” | Only then consider local Qwen |
+| DeepSeek API down + non-trivial task | **Grok 4.5**, not Ollama |
+| DeepSeek down + tiny mechanical only | Optional: Qwen3.6 → else `qwen3.5:9b` |
 
-Local Qwen is **not** the default junior; DeepSeek V4 Pro is.
+Do **not** open with `ollama list` or “which local model” when Stack A was requested.
 
 ## Banned as defaults
 
+- **Ollama / local models** as the first pick under Stack A.
 - **Codex / GPT Sol** — only if the user explicitly asks (`codex-subagent`).
 - **Composer / Sonnet** — not the default implementer under Stack A.
 - Skipping Grok senior review on non-trivial DeepSeek output.
 - Claiming merge-ready without **Opus** sign-off after the pipeline.
+- Briefing **Grok first** for bulk work when DeepSeek is the junior (Grok is senior review/fix, not default implementer).
 
 ## Skills map
 
