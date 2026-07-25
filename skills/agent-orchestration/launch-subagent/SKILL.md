@@ -1,6 +1,6 @@
 ---
 name: launch-subagent
-description: 'Read this BEFORE launching any subagent (Task tool, background agents, parallel agents, best-of-N, delegating work to another agent). Stack A model policy (orchestrator / executor / reviewer) plus consensus principles. Triggers: launch a subagent, spawn agents, run agents in parallel, delegate to a subagent.'
+description: 'Read this BEFORE launching any subagent (Task tool, background agents, parallel agents, best-of-N, delegating work to another agent). Stack A model policy (orchestrator / junior DeepSeek / senior Grok / Opus sign-off) plus consensus principles. Triggers: launch a subagent, spawn agents, run agents in parallel, delegate to a subagent.'
 ---
 
 # Stack A — Quality-first model policy
@@ -9,80 +9,82 @@ Hard defaults for this skills pack. Override only if the user explicitly names a
 
 | Role | Model | Notes |
 |------|--------|--------|
-| **Orchestrator** | **Opus 5** (host session) | The main agent you are talking to. Plans, splits work, integrates results, verifies before trust. |
-| **Hard executor** | **Grok 4.5** | Non-trivial implementation: multi-file features, hard bugs, refactors. Prefer `grok-subagent` (separate Grok CLI process). |
-| **Routine executor** | **DeepSeek V4** or **local Qwen** (prefer **Qwen3.6**, else **qwen3.5:9b**) | Boilerplate, renames, tests-from-spec, mechanical edits — only with a complete brief + verification commands. |
-| **Reviewer** | **Opus 5 XOR Grok 4.5** | Must be a **different family** than the implementer. If Grok built it → Opus reviews. If Opus built it → Grok reviews. |
+| **Orchestrator** | **Opus 5** (host session) | Plans, briefs, routes work, integrates. Does not grind most implementation. |
+| **Junior engineer** (default implementer) | **DeepSeek V4 Pro** | Does **most of the work**. Use `deepseek-subagent`. Full brief + verification commands required. |
+| **Senior engineer** | **Grok 4.5** | Reviews junior output and **fixes** serious issues. `grok-review` + `grok-subagent` for fixes. |
+| **Final sign-off** | **Opus 5** | Last gate before done/merge. `opus-review` and/or orchestrator verification. |
+
+## Default pipeline (non-trivial implementation)
+
+1. **Opus** — plan + write self-contained brief.
+2. **DeepSeek V4 Pro** — implement (`deepseek-subagent`).
+3. **Grok 4.5** — review; fix Critical/Important issues (`grok-review`, then `grok-subagent` if fixes needed).
+4. **Opus 5** — final sign-off (diff + tests). Report to user.
+
+Do **not** skip senior Grok review on non-trivial DeepSeek work. Do **not** claim done without Opus sign-off.
 
 ## Orchestrator rules
 
 - The **host session** is the orchestrator. Prefer starting that session on **Opus 5**.
-- The orchestrator does **not** silently re-assign itself to a cheap model mid-task.
-- Orchestrator **always** reviews executor diffs / test output before declaring done.
-- DO NOT launch subagents unless the User tells you to, or the task is large enough that parallel independent work clearly wins.
+- The orchestrator does **not** silently re-assign itself to a cheap model mid-task for planning/sign-off.
+- Orchestrator **always** inspects executor diffs / test output before claiming done.
+- DO NOT launch subagents unless the User tells you to, or the task is clearly large independent work.
 
 ## Executor rules
 
-### Hard work → Grok 4.5
+### Most work → DeepSeek V4 Pro (junior)
 
-- Use **Grok 4.5** (`grok-4.5`) via the **`grok-subagent`** skill (headless Grok CLI).
-- Full self-contained brief: goal, constraints, files, definition of done, how to verify.
-- After Grok finishes: read the summary, `git status` / diff, run verification yourself.
+- Default implementer for features, bugfixes, tests, refactors with a complete brief.
+- Auth: `source ~/.config/stack-a/env` — uses `DEEPSEEK_API_KEY` (never print the key).
+- Skill: **`deepseek-subagent`**.
+- After DeepSeek finishes: run verification; then send to **Grok senior** review.
 
-### Routine work → DeepSeek V4 or local Qwen
+### Senior review / fix → Grok 4.5
 
-- Only when the orchestrator already wrote a tight spec (files, invariants, acceptance tests).
-- Prefer a local/cheap coding agent or API the user has configured; if none is available, keep the work on Grok 4.5 rather than guessing.
-- Never use a routine model for security, auth, payments, data-loss risk, or ambiguous product work.
+- After junior implementation: **`grok-review`** (report findings).
+- If Critical/Important issues: **`grok-subagent`** to fix (or tightly scoped re-brief to DeepSeek for tiny typos only).
+- Grok may also take **hard rescue** when DeepSeek is blocked (auth, multi-system design, security-sensitive work).
 
-#### Local Qwen selection (Ollama)
+### Tiny mechanical only → local Qwen (optional)
 
-When routing routine work to a **local Qwen** (not DeepSeek cloud):
-
-1. Prefer **Qwen3.6** if installed (`ollama list` shows a `qwen3.6` / `qwen3.6:*` tag).
-2. If Qwen3.6 is **not** available, use **`qwen3.5:9b`** (Ollama tag `qwen3.5:9b`).
-3. If neither is installed, do **not** invent another local model — fall back to **Grok 4.5** (or DeepSeek V4 if configured).
-
-Quick check:
-
-```bash
-ollama list | rg -i 'qwen3\.6|qwen3\.5:9b'
-```
+- Only for trivial tasks when DeepSeek is down: **Qwen3.6** if installed, else **`qwen3.5:9b`**.
+- Not the default junior.
 
 ### Banned as subagent defaults
 
-- Do **not** default subagents to Composer, Sonnet-class, or random auto-picks.
+- Do **not** default implementers to Composer, Sonnet-class, or random auto-picks.
 - Do **not** use OpenAI Codex / GPT Sol as the Stack A default (legacy `codex-subagent` only if the user explicitly asks for Codex).
 
-## Reviewer rules
+## Reviewer / sign-off rules
 
-- Use **`opus-review`** when the implementer was Grok (or another non-Opus model).
-- Use **`grok-review`** when the implementer was Opus (or you need a second-family review after Opus edits).
-- Reviewer must stay **neutral** — no nudging toward a preferred solution.
-- Show the reviewer's report **verbatim**. Do not rewrite it.
-- Cheap models (DeepSeek / Qwen) may run a **checklist self-check**, never the sole merge-gate review on high-stakes code.
+| Stage | Who | Skill |
+|-------|-----|--------|
+| Senior review of junior work | **Grok 4.5** | `grok-review` |
+| Senior fixes | **Grok 4.5** | `grok-subagent` |
+| Final sign-off | **Opus 5** | `opus-review` / host Opus |
 
-## How subagents actually run (Claude Code / Cursor / host agents)
+- Reviewers stay **neutral**; show reports **verbatim**.
+- Local Qwen / cheap models may run a **checklist self-check** only — never sole merge-gate or final sign-off.
 
-Subagents are **not** “another model inside the same chat bubble” unless the host product has native multi-model Task routing.
+## How subagents actually run
 
 | Launch style | What happens |
 |--------------|--------------|
-| **Grok CLI headless** (`grok -p` / `--prompt-file`) | **New OS process**. Separate context. Can be **backgrounded** from the host’s shell tool. Preferred Stack A hard executor. |
-| **Grok interactive TUI** (`grok "…"` in a terminal / cmux pane) | **New terminal session** you can watch. Same model, interactive. |
-| **Host Task / Agent tool** (Claude Code Task, Cursor subagent) | Host product spawns a subagent with the **model you select**. If the host cannot select Grok, use Grok CLI instead. |
-| **Cheap local / DeepSeek** | Separate process or API call — only if configured on the machine. |
+| **DeepSeek junior** | `deepseek-subagent` — OpenAI-compatible API (`DEEPSEEK_*` env). Separate process / agent loop. |
+| **Grok senior** | `grok -p` / `--prompt-file` — **new OS process**. |
+| **Host Task** | Only if the host can select the right model family for the role. |
+| **Opus sign-off** | Host Opus session or Task on Opus 5. |
 
-**Claude Code specifically:** asking for Grok work means Claude runs a **shell command** that starts the **Grok CLI**. That is a **new CLI process** (foreground or background), not Grok “inside” Claude. Claude remains orchestrator; Grok is the worker.
+**Claude Code specifically:** DeepSeek and Grok run as **separate processes** (or API agents), not “inside” Opus. Opus remains orchestrator + final sign-off.
 
 ---
 
 # SUBAGENTS (hard rules — repeat)
 
 - Orchestrator host: **Opus 5**
-- Hard executor: **Grok 4.5** via `grok-subagent` when possible
-- Routine executor: **DeepSeek V4** or **local Qwen** (Qwen3.6 → else **qwen3.5:9b**) only with a complete brief
-- Reviewer: **opposite family** of the implementer (`opus-review` vs `grok-review`)
+- Junior implementer (most work): **DeepSeek V4 Pro** via `deepseek-subagent`
+- Senior engineer: **Grok 4.5** review + fix (`grok-review` / `grok-subagent`)
+- Final sign-off: **Opus 5** (`opus-review`)
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
 - NEVER default subagents to Composer / weak auto models
 - only ever use Stack A models above unless the user overrides
@@ -96,15 +98,15 @@ Consensus of Boris Cherny, Matt Pocock, Pietro Schirano, and Peter Steinberger:
 - Subagents start blind: they see none of your context. Write the full brief into the prompt — scope, all needed context, constraints, and the exact output to return.
 - Scope narrowly and concretely: "explore how payments work" beats "explore everything". One bounded task per subagent, small blast radius.
 - The main agent stays the orchestrator. It plans the split, integrates results, and reviews/verifies every subagent output before trusting it.
-- Keep critical implementation, tightly-coupled edits, and quick fixes in the main loop — delegation overhead is only worth it for independent, research-heavy, or review work.
+- Keep critical planning, tightly-coupled judgment, and final sign-off in the Opus loop — implementation bulk goes to DeepSeek; hard fixes to Grok.
 - Have subagents return short summaries or concrete results, never raw transcripts or file dumps. That keeps the main context clean.
 
 # SUBAGENTS (hard rules — repeat)
 
 - Orchestrator host: **Opus 5**
-- Hard executor: **Grok 4.5** via `grok-subagent` when possible
-- Routine executor: **DeepSeek V4** or **local Qwen** (Qwen3.6 → else **qwen3.5:9b**) only with a complete brief
-- Reviewer: **opposite family** of the implementer (`opus-review` vs `grok-review`)
+- Junior implementer (most work): **DeepSeek V4 Pro** via `deepseek-subagent`
+- Senior engineer: **Grok 4.5** review + fix (`grok-review` / `grok-subagent`)
+- Final sign-off: **Opus 5** (`opus-review`)
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
 - NEVER default subagents to Composer / weak auto models
 - only ever use Stack A models above unless the user overrides

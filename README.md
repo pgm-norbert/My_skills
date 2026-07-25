@@ -10,17 +10,22 @@ See **[STACK-A.md](./STACK-A.md)** for the full guide.
 | Role | Model |
 |------|--------|
 | Orchestrator | **Opus 5** (host session) |
-| Hard executor | **Grok 4.5** (`grok-subagent` CLI) |
-| Routine executor | **DeepSeek V4** / local Qwen (**Qwen3.6** → else **`qwen3.5:9b`**) |
-| Reviewer | **Opus 5** *or* **Grok 4.5** (opposite of implementer) |
+| Junior engineer (most work) | **DeepSeek V4 Pro** (`deepseek-subagent`) |
+| Senior engineer | **Grok 4.5** (`grok-review` + `grok-subagent` fixes) |
+| Final sign-off | **Opus 5** (`opus-review`) |
+
+Pipeline: **Opus plan → DeepSeek implement → Grok review/fix → Opus sign-off**.
 
 Key skills:
 
-- `skills/agent-orchestration/launch-subagent/` — hard model policy
-- `skills/agent-orchestration/grok-subagent/` — hard executor via Grok CLI
-- `skills/agent-orchestration/opus-review/` / `grok-review/` — opposite-family review
-- `fable-review` / `gpt-review` — compat aliases → opus / grok review
+- `skills/agent-orchestration/launch-subagent/` — model policy
+- `skills/agent-orchestration/deepseek-subagent/` — junior implementer
+- `skills/agent-orchestration/grok-subagent/` — senior fixes / hard rescue
+- `skills/agent-orchestration/grok-review/` / `opus-review/` — senior review / final sign-off
+- `fable-review` / `gpt-review` — aliases → opus sign-off / grok senior review
 - `codex-subagent` — **legacy** OpenAI path only if you explicitly ask
+
+DeepSeek credentials: local only `~/.config/stack-a/env` (never commit API keys).
 
 ## Upstream layout
 

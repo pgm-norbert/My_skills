@@ -1,60 +1,73 @@
 # Stack A — Quality-first orchestration
 
-Personal policy on top of the davidondrej-style agent skills in this repo.
+Personal policy: **Opus orchestrates and signs off**, **DeepSeek does most of the coding**, **Grok is the senior engineer** who reviews and fixes.
 
 ## Roles
 
-| Role | Model | Skill / mechanism |
-|------|--------|-------------------|
-| Orchestrator | **Opus 5** | Host session (Claude Code / Cursor on Opus) |
-| Hard executor | **Grok 4.5** | `grok-subagent` → separate Grok CLI process |
-| Routine executor | **DeepSeek V4** or **local Qwen** (prefer **Qwen3.6**, else **`qwen3.5:9b`**) | Only with a complete brief + tests |
-| Reviewer | **Opus 5 XOR Grok 4.5** | Opposite of implementer: `opus-review` / `grok-review` |
+| Role | Model | Job |
+|------|--------|-----|
+| **Orchestrator** | **Opus 5** | Host session. Plans, writes briefs, routes work, integrates. Does **not** grind implementation by default. |
+| **Junior engineer** (default implementer) | **DeepSeek V4 Pro** | Does **most of the work**: features, fixes, tests from a complete brief. Skill: `deepseek-subagent`. |
+| **Senior engineer** | **Grok 4.5** | Reviews junior work, **fixes** serious issues, hard problems the junior can’t land. Skills: `grok-review` (review), `grok-subagent` (fix / hard rescue). |
+| **Final sign-off** | **Opus 5** | Last gate before “done” / merge claim. Skill: `opus-review` (or host Opus verification + sign-off). |
 
-## Claude Code + Grok: what actually runs?
+## Default delivery pipeline
 
 ```
-┌─────────────────────────────┐
-│  Claude Code (Opus 5)       │  ← orchestrator (this chat)
-│  plans, briefs, verifies    │
-└─────────────┬───────────────┘
-              │ shell / background shell
-              ▼
-┌─────────────────────────────┐
-│  grok -p / --prompt-file    │  ← NEW OS process (Grok CLI)
-│  -m grok-4.5 --cwd repo     │     own context, tools, files
-└─────────────────────────────┘
+User
+ └─ Opus 5 (orchestrator): plan + brief + definition of done
+      └─ DeepSeek V4 Pro (junior): implement most of the task
+      └─ Grok 4.5 (senior): review; fix Critical/Important issues
+      └─ Opus 5 (sign-off): final check of diff + tests; report to user
 ```
 
-- Grok does **not** run “inside” Claude’s model call.
-- It is a **new CLI process** (foreground wait, or **background** job you poll).
-- Optional: open an interactive `grok` TUI in another terminal / cmux pane to watch it live.
+1. **Opus** writes a self-contained brief (goal, paths, constraints, verify commands).
+2. **DeepSeek** implements against that brief (`deepseek-subagent`).
+3. **Grok** reviews the diff; if issues, **Grok fixes** (or re-briefs DeepSeek for tiny follow-ups — prefer Grok for fixes on code it just reviewed).
+4. **Opus** re-reads summary + `git diff` + test output and **signs off** (or sends one more fix cycle). Never claim done without Opus sign-off when this pipeline ran.
 
-## Example flow
+## Credentials (DeepSeek)
 
-User (in Claude Code on Opus 5):
-
-> Implement dark mode for Settings, then review.
-
-1. **Orchestrator (Opus)** writes a brief: files, constraints, `npm test` / typecheck.
-2. Opus runs **`grok-subagent`** (headless Grok 4.5) with that brief.
-3. Grok process edits the repo and exits with a summary.
-4. Opus reads diff + runs tests.
-5. Opus runs **`opus-review`** only if a second Opus pass is needed for judgment **or** — if Opus itself implemented — runs **`grok-review`**. After Grok implemented, prefer a clean Opus review Task / fresh session (`opus-review`).
-6. Opus reports merge readiness to the user.
-
-## Local Qwen (routine executor)
-
-When using a **local** Qwen via Ollama for routine work:
-
-1. Prefer **Qwen3.6** if present (`ollama list` → `qwen3.6` / `qwen3.6:*`).
-2. Else use **`qwen3.5:9b`** (this machine’s installed fallback).
-3. Else do not guess another local model — use **Grok 4.5** (or DeepSeek V4 if configured).
+- **Never** put API keys in skill markdown or git.
+- Local file: `~/.config/stack-a/env` (mode `600`), sourced from `~/.zshrc`.
+- Variables: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` (default `https://api.deepseek.com`), `DEEPSEEK_MODEL` (default `deepseek-chat` for V4 Pro API access).
 
 ```bash
-ollama list | rg -i 'qwen3\.6|qwen3\.5:9b'
+source ~/.config/stack-a/env
+# key loaded? yes if non-empty — do not echo the value
+test -n "$DEEPSEEK_API_KEY" && echo "DeepSeek ready ($DEEPSEEK_MODEL)"
 ```
+
+## Local Qwen (optional cheap path)
+
+Only for **tiny** mechanical tasks when DeepSeek is unavailable and the brief is trivial:
+
+1. Prefer **Qwen3.6** if in Ollama.
+2. Else **`qwen3.5:9b`**.
+3. Else skip local — use DeepSeek or Grok.
+
+Local Qwen is **not** the default junior; DeepSeek V4 Pro is.
+
+## Banned as defaults
+
+- **Codex / GPT Sol** — only if the user explicitly asks (`codex-subagent`).
+- **Composer / Sonnet** — not the default implementer under Stack A.
+- Skipping Grok senior review on non-trivial DeepSeek output.
+- Claiming merge-ready without **Opus** sign-off after the pipeline.
+
+## Skills map
+
+| Skill | Model / role |
+|-------|----------------|
+| `launch-subagent` | Policy (this stack) |
+| `deepseek-subagent` | Junior implementer (DeepSeek V4 Pro) |
+| `grok-subagent` | Senior fix / hard rescue (Grok 4.5) |
+| `grok-review` | Senior review of junior work (Grok 4.5) |
+| `opus-review` | Final sign-off (Opus 5) |
+| `fable-review` | Alias → `opus-review` |
+| `gpt-review` | Alias → `grok-review` (Grok senior, not OpenAI) |
+| `codex-subagent` | Legacy — user must ask |
 
 ## Install / sync
 
-Skills live under `skills/agent-orchestration/`. Symlink or copy into your agent skill roots (`~/.agents/skills`, `~/.claude/skills`, etc.).
+Skills live under `skills/agent-orchestration/`. Symlink or copy into agent skill roots (`~/.agents/skills`, `~/.claude/skills`, etc.).

@@ -1,34 +1,61 @@
 ---
 name: opus-review
-description: 'Launch an Opus 5 subagent (or host Task on Opus 5) for a deep, neutral senior-developer review. Use when the implementer was Grok 4.5 / DeepSeek / Qwen, or the user says "/opus-review", "opus review". Stack A: opposite-family reviewer vs Grok implementer.'
+description: 'Opus 5 final sign-off (Stack A). Use after DeepSeek junior + Grok senior review/fix, or when the user says "/opus-review", "opus review", "final sign-off". Last gate before claiming done or merge-ready.'
 ---
 
-# Opus Review (Stack A)
+# Opus Review — Final Sign-off (Stack A)
 
-Launch an **Opus 5** reviewer to review everything fully and carefully, as if it was a senior developer reviewing the work of a junior.
+Launch **Opus 5** (or use the host Opus orchestrator session) for the **last gate** before claiming work is done or merge-ready.
 
-**When to use:** the hard executor was **Grok 4.5** (or a cheap implementer). Opposite-family review is the point.
+**When to use:**
+
+- After **DeepSeek junior** implemented and **Grok senior** reviewed (and fixed if needed).
+- User says `/opus-review`, “opus review”, “sign off”, “final review”.
+- Anytime the pipeline completed and someone is about to say “done”.
+
+Stack A pipeline reminder:
+
+`Opus plan → DeepSeek implement → Grok senior review/fix → **Opus sign-off**`
 
 ## How to launch
 
 Prefer, in order:
 
-1. **Host Task / Agent tool** with model **Opus 5** (same product session family — fine for review when implementer was Grok CLI).
-2. If the host is already Opus 5 and cannot spawn a second Opus cleanly, open a **fresh Opus session** (new Claude Code chat / pane) with only the review brief — not the implementation chat history that might bias it.
-3. Do **not** use Grok as the reviewer when Grok was the implementer.
+1. **Host Opus 5 session** (orchestrator) performing sign-off with a clean checklist if it did not write the code.
+2. **Host Task / Agent tool** with model **Opus 5** and a sign-off-only brief.
+3. **Fresh Opus session** (new Claude Code chat / pane) with only the sign-off brief — useful if the implementation chat is huge or biased.
 
-## Brief for the reviewer
+## Brief for sign-off
 
-Give necessary context, but stay neutral and unbiased. Do not nudge toward any one specific solution. The goal is great work — be objective.
+Give context, stay objective:
 
-Tell it what to review, but don’t be overly specific — let it find its own bugs and shortcomings. Tell it to work extremely hard, go deep, and surface any critical or serious issues.
+```markdown
+You are doing FINAL SIGN-OFF, not a redesign.
 
-Ask for a concise plain-English report: safe to merge / not, with serious issues and how to fix them.
+## What shipped
+(summary from junior + senior)
+
+## Diff / range
+(base..head or PR)
+
+## Evidence
+(test commands + results)
+
+## Prior senior review
+(Grok findings + what was fixed)
+
+## Decide
+- Sign off: yes / no
+- If no: only blocking issues + how to fix
+- Do not re-litigate pure taste if senior already approved
+```
+
+Ask for a concise plain-English report: **signed off or not**, with any remaining blockers.
 
 ## After it finishes
 
-Show the user the reviewer’s **exact response in full**. Do not rewrite it. Do not soften it.
+Show the user the sign-off report **in full**. Do not soften blockers.
 
 ## Aliases
 
-`/fable-review` and older “Fable Max reviewer” language map to this skill under Stack A (**Opus 5**).
+`/fable-review` maps here under Stack A (**Opus 5** final sign-off).
