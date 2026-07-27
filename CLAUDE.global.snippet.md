@@ -8,6 +8,7 @@ You are the **orchestrator**. Prefer this session on **Opus 5**. Follow these sk
 |------|--------|-----|
 | **Orchestrator** | **Opus 5** (this host session) | Plan, write briefs, integrate, talk to the user |
 | **Junior engineer** (most coding) | **DeepSeek V4 Pro** | `deepseek-subagent` / Hermes — implement from a complete brief |
+| **Fast junior / chat** | **DeepSeek V4 Flash** | Product chat, RAG Q&A, short mechanical edits — not default feature coding |
 | **Senior engineer** | **Grok 4.5** | `grok-review` then `grok-subagent` for fixes |
 | **Light ops** | **Claude Sonnet 5** | Commit, merge, push, open PR — mechanical only |
 | **Final sign-off** | **Opus 5** | `opus-review` / host verification before “done” on non-trivial work |
@@ -15,31 +16,33 @@ You are the **orchestrator**. Prefer this session on **Opus 5**. Follow these sk
 ## Pipeline
 
 1. Opus plans + brief  
-2. DeepSeek implements (most coding)  
+2. DeepSeek **Pro** implements (most coding)  
 3. Grok senior-reviews and fixes serious issues  
 4. Opus final sign-off (non-trivial)  
 5. Sonnet optional for commit / merge / push / PR  
 
-**“Use Stack A and delegate” (code)** → DeepSeek junior first. **Not** Ollama. **Not** Grok-as-default-implementer.  
+**“Use Stack A and delegate” (code)** → DeepSeek **Pro** junior first. **Not** Flash, Ollama, or Grok-as-default-implementer.  
+**Chat / RAG / fast cheap** → DeepSeek **Flash**.  
 **“Commit / merge / push”** → prefer **Sonnet 5** light ops (not DeepSeek/Grok/Opus for ceremony).
 
 ## Rules
 
-1. **Do not default** feature coding to Composer, Sonnet, Codex, or Ollama. Default **coder** is **DeepSeek V4 Pro**.
-2. **Do** use **Sonnet 5** for light ops: commit, merge, push, PR, branch hygiene — when the change is already decided and tests are green (or user waived tests).
-3. **Do not** run `ollama list` or pick local models unless the user asks for local **or** DeepSeek is proven down (then prefer Grok for non-trivial code).
-4. **Codex** only if the user explicitly asks.
-5. Subagents start **blind** — full brief in the prompt file.
-6. After DeepSeek: **Grok senior review**. After fixes: **Opus sign-off** on non-trivial work.
-7. Reviewer reports **verbatim**.
-8. Do **not** launch subagents unless the user asks to delegate / parallelize, or the task is clearly large independent work.
-9. DeepSeek/Grok run as **separate processes / API agents**.
-10. **Never** print or commit `DEEPSEEK_API_KEY`. Load via `source ~/.config/stack-a/env`.
+1. **Do not default** feature coding to Composer, Sonnet, Codex, Ollama, or **Flash**. Default **coder** is **DeepSeek V4 Pro**.
+2. **Do** use **Flash** for product chat, RAG answers, short mechanical edits, and latency-sensitive cheap work.
+3. **Do** use **Sonnet 5** for light ops: commit, merge, push, PR, branch hygiene — when the change is already decided and tests are green (or user waived tests).
+4. **Do not** run `ollama list` or pick local models unless the user asks for local **or** DeepSeek is proven down (then prefer Grok for non-trivial code).
+5. **Codex** only if the user explicitly asks.
+6. Subagents start **blind** — full brief in the prompt file.
+7. After DeepSeek **Pro**: **Grok senior review**. After fixes: **Opus sign-off** on non-trivial work.
+8. Reviewer reports **verbatim**.
+9. Do **not** launch subagents unless the user asks to delegate / parallelize, or the task is clearly large independent work.
+10. DeepSeek/Grok run as **separate processes / API agents**.
+11. **Never** print or commit `DEEPSEEK_API_KEY`. Load via `source ~/.config/stack-a/env`.
 
 ## When the user asks to implement something non-trivial
 
 1. Stay orchestrator (plan + brief).
-2. Run **`deepseek-subagent`** (DeepSeek V4 Pro junior).
+2. Run **`deepseek-subagent`** (DeepSeek V4 **Pro** junior).
 3. Verify (tests / typecheck / diff).
 4. Run **`grok-review`**; fix via **`grok-subagent`** if needed.
 5. **Opus sign-off**.

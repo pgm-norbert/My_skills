@@ -1,6 +1,6 @@
 ---
 name: launch-subagent
-description: 'Read this BEFORE launching any subagent (Task tool, background agents, parallel agents, best-of-N, delegating work to another agent). Stack A model policy (orchestrator / junior DeepSeek / senior Grok / light Sonnet ops / Opus sign-off) plus consensus principles. Triggers: launch a subagent, spawn agents, run agents in parallel, delegate to a subagent.'
+description: 'Read this BEFORE launching any subagent (Task tool, background agents, parallel agents, best-of-N, delegating work to another agent). Stack A model policy (orchestrator / DeepSeek Pro junior / DeepSeek Flash fast-chat / senior Grok / light Sonnet ops / Opus sign-off) plus consensus principles. Triggers: launch a subagent, spawn agents, run agents in parallel, delegate to a subagent.'
 ---
 
 # Stack A — Quality-first model policy
@@ -11,9 +11,22 @@ Hard defaults for this skills pack. Override only if the user explicitly names a
 |------|--------|--------|
 | **Orchestrator** | **Opus 5** (host session) | Plans, briefs, routes work, integrates. Does not grind most implementation. |
 | **Junior engineer** (default implementer) | **DeepSeek V4 Pro** | Does **most of the coding**. Use `deepseek-subagent` (Hermes). Full brief required. |
+| **Fast junior / chat** | **DeepSeek V4 Flash** | Chat, RAG Q&A, short mechanical edits, classification. **Not** default feature coding. |
 | **Senior engineer** | **Grok 4.5** | Reviews junior output and **fixes** serious issues. `grok-review` + `grok-subagent`. |
 | **Light ops** | **Claude Sonnet 5** | **Commit, merge, push, open PR**, branch cleanup — mechanical ship steps after work is decided. **Not** feature implementation. |
 | **Final sign-off** | **Opus 5** | Last gate before done/merge on non-trivial work. `opus-review`. |
+
+## DeepSeek Pro vs Flash
+
+| Lane | Slug | Job |
+|------|------|-----|
+| **Pro** | `deepseek-v4-pro` | Default **coding** junior (Hermes implementer) |
+| **Flash** | `deepseek-v4-flash` | **Fast junior / chat** — product chat, RAG answers, short edits, labels |
+
+- Code delegation (“use Stack A and implement…”) → **Pro**.
+- Interactive chat / RAG / cheap high-volume → **Flash**.
+- Do **not** silently downgrade multi-file features to Flash to save cost.
+- Explicit user override always wins (“use Flash for this”, “use Pro”).
 
 ## Default pipeline (non-trivial implementation)
 
@@ -23,7 +36,7 @@ Hard defaults for this skills pack. Override only if the user explicitly names a
 4. **Opus 5** — final sign-off (diff + tests).
 5. **Sonnet 5** (optional) — commit / merge / push / PR when the user asks for light ship steps.
 
-Do **not** skip senior Grok review on non-trivial DeepSeek work. Do **not** claim done without Opus sign-off on non-trivial work.
+Do **not** skip senior Grok review on non-trivial DeepSeek Pro work. Do **not** claim done without Opus sign-off on non-trivial work.
 
 ## Orchestrator rules
 
@@ -31,7 +44,7 @@ Do **not** skip senior Grok review on non-trivial DeepSeek work. Do **not** clai
 - The orchestrator does **not** silently re-assign itself to a cheap model mid-task for planning/sign-off.
 - Orchestrator **always** inspects executor diffs / test output before claiming done on code work.
 - DO NOT launch subagents unless the User tells you to, or the task is clearly large independent work.
-- **Route by task weight:** code judgment → DeepSeek/Grok/Opus; pure git ceremony → Sonnet.
+- **Route by task weight:** feature coding → DeepSeek **Pro** / Grok / Opus; chat-RAG → Flash; pure git ceremony → Sonnet.
 
 ## Executor rules
 
@@ -39,12 +52,19 @@ Do **not** skip senior Grok review on non-trivial DeepSeek work. Do **not** clai
 
 - Default implementer for features, bugfixes, tests, refactors with a complete brief.
 - Auth: `source ~/.config/stack-a/env` — `DEEPSEEK_API_KEY` (never print the key).
-- Skill: **`deepseek-subagent`** (Hermes + deepseek-v4-pro).
+- Skill: **`deepseek-subagent`** (Hermes + `deepseek-v4-pro`).
 - After DeepSeek finishes: verification; then **Grok senior** review.
+
+### Fast junior / chat → DeepSeek V4 Flash
+
+- Use for: product chat UIs, RAG answer generation, short one-file mechanical edits, classification / labeling, latency-sensitive loops.
+- Prefer Flash in **app code** when wiring user-facing chat (cost + speed).
+- Optional Hermes: `-m deepseek-v4-flash` only when the brief is tiny or the user asks for Flash.
+- Flash is **not** a merge gate and is **not** a substitute for Pro on non-trivial multi-file coding.
 
 ### Senior review / fix → Grok 4.5
 
-- After junior implementation: **`grok-review`**.
+- After junior **Pro** implementation: **`grok-review`**.
 - Critical/Important issues: **`grok-subagent`**.
 - Hard rescue when DeepSeek is blocked (auth, multi-system design, security-sensitive work).
 
@@ -79,7 +99,7 @@ Use Sonnet when the task is **mechanical and already decided** — a less capabl
 
 ### Banned as subagent defaults
 
-- Do **not** default **feature implementation** to Composer, Sonnet, or random auto-picks. (Sonnet is **light ops only**.)
+- Do **not** default **feature implementation** to Composer, Sonnet, Flash, or random auto-picks. (Sonnet = light ops; Flash = chat/fast; **Pro** = coding junior.)
 - Do **not** default to **Ollama** when Stack A coding is requested.
 - Do **not** use OpenAI Codex / GPT Sol as Stack A default (only if user asks).
 
@@ -91,15 +111,17 @@ Use Sonnet when the task is **mechanical and already decided** — a less capabl
 | Senior fixes | **Grok 4.5** | `grok-subagent` |
 | Final sign-off (non-trivial) | **Opus 5** | `opus-review` / host Opus |
 | Light ship steps | **Sonnet 5** | host Task |
+| Product chat / RAG | **Flash** | app LLM client (not a skill gate) |
 
 - Reviewers stay **neutral**; show reports **verbatim**.
-- Sonnet / local Qwen never sole merge-gate on non-trivial code.
+- Sonnet / Flash / local Qwen never sole merge-gate on non-trivial code.
 
 ## How subagents actually run
 
 | Launch style | What happens |
 |--------------|--------------|
-| **DeepSeek junior** | `deepseek-subagent` / Hermes — API + tool loop |
+| **DeepSeek Pro junior** | `deepseek-subagent` / Hermes `-m deepseek-v4-pro` |
+| **DeepSeek Flash** | Hermes `-m deepseek-v4-flash` or product API client |
 | **Grok senior** | `grok -p` / `--prompt-file` — **new OS process** |
 | **Sonnet light ops** | Host Task / Claude session on **Sonnet 5** |
 | **Opus sign-off** | Host Opus or Task on Opus 5 |
@@ -112,12 +134,14 @@ Use Sonnet when the task is **mechanical and already decided** — a less capabl
 
 - Orchestrator host: **Opus 5**
 - Junior implementer (most coding): **DeepSeek V4 Pro** via `deepseek-subagent`
+- Fast junior / chat: **DeepSeek V4 Flash**
 - Senior engineer: **Grok 4.5** review + fix
 - Light ops (commit / merge / push / PR): **Claude Sonnet 5**
 - Final sign-off (non-trivial): **Opus 5**
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
-- NEVER default **coding** to Sonnet / Composer / Ollama
-- Default “use Stack A and delegate” for **code** → **DeepSeek junior**
+- NEVER default **coding** to Sonnet / Composer / Ollama / Flash
+- Default “use Stack A and delegate” for **code** → **DeepSeek Pro junior**
+- Default for **chat/RAG** → **DeepSeek Flash**
 - Default for **commit/merge/push only** → **Sonnet light ops**
 
 ## General Subagent Principles
@@ -129,17 +153,19 @@ Consensus of Boris Cherny, Matt Pocock, Pietro Schirano, and Peter Steinberger:
 - Subagents start blind: they see none of your context. Write the full brief into the prompt — scope, all needed context, constraints, and the exact output to return.
 - Scope narrowly and concretely: "explore how payments work" beats "explore everything". One bounded task per subagent, small blast radius.
 - The main agent stays the orchestrator. It plans the split, integrates results, and reviews/verifies every subagent output before trusting it.
-- Keep critical planning, tightly-coupled judgment, and final sign-off in the Opus loop — implementation bulk to DeepSeek; hard fixes to Grok; git ceremony to Sonnet.
+- Keep critical planning, tightly-coupled judgment, and final sign-off in the Opus loop — implementation bulk to DeepSeek **Pro**; chat/RAG to **Flash**; hard fixes to Grok; git ceremony to Sonnet.
 - Have subagents return short summaries or concrete results, never raw transcripts or file dumps. That keeps the main context clean.
 
 # SUBAGENTS (hard rules — repeat)
 
 - Orchestrator host: **Opus 5**
 - Junior implementer (most coding): **DeepSeek V4 Pro** via `deepseek-subagent`
+- Fast junior / chat: **DeepSeek V4 Flash**
 - Senior engineer: **Grok 4.5** review + fix
 - Light ops (commit / merge / push / PR): **Claude Sonnet 5**
 - Final sign-off (non-trivial): **Opus 5**
 - DO NOT launch subagents unless the User tells you to (or clear parallel independent work)
-- NEVER default **coding** to Sonnet / Composer / Ollama
-- Default “use Stack A and delegate” for **code** → **DeepSeek junior**
+- NEVER default **coding** to Sonnet / Composer / Ollama / Flash
+- Default “use Stack A and delegate” for **code** → **DeepSeek Pro junior**
+- Default for **chat/RAG** → **DeepSeek Flash**
 - Default for **commit/merge/push only** → **Sonnet light ops**

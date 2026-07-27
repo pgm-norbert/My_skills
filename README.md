@@ -1,7 +1,7 @@
 # My_skills (pgm-norbert)
 
 Fork / working copy of davidondrej-style Agent Skills, with a personal
-**Stack A** orchestration policy (Opus + Grok, not OpenAI-default).
+**Stack A** orchestration policy (Opus + DeepSeek + Grok, not OpenAI-default).
 
 ## Stack A (quality-first)
 
@@ -11,16 +11,22 @@ See **[STACK-A.md](./STACK-A.md)** for the full guide.
 |------|--------|
 | Orchestrator | **Opus 5** (host session) |
 | Junior engineer (most coding) | **DeepSeek V4 Pro** (`deepseek-subagent`) |
+| Fast junior / chat | **DeepSeek V4 Flash** (RAG, product chat, short edits) |
 | Senior engineer | **Grok 4.5** (`grok-review` + `grok-subagent` fixes) |
 | Light ops | **Claude Sonnet 5** (commit / merge / push / PR) |
 | Final sign-off | **Opus 5** (`opus-review`) |
 
-Pipeline: **Opus plan → DeepSeek implement → Grok review/fix → Opus sign-off → Sonnet for ship ceremony**.
+Pipeline: **Opus plan → DeepSeek Pro implement → Grok review/fix → Opus sign-off → Sonnet for ship ceremony**.
+
+DeepSeek lanes:
+
+- **Pro** (`deepseek-v4-pro`) — default coding junior via Hermes.
+- **Flash** (`deepseek-v4-flash`) — fast junior / chat / RAG; not the default feature implementer.
 
 Key skills:
 
 - `skills/agent-orchestration/launch-subagent/` — model policy
-- `skills/agent-orchestration/deepseek-subagent/` — junior implementer
+- `skills/agent-orchestration/deepseek-subagent/` — junior implementer (Pro default; Flash optional)
 - `skills/agent-orchestration/grok-subagent/` — senior fixes / hard rescue
 - `skills/agent-orchestration/grok-review/` / `opus-review/` — senior review / final sign-off
 - Host **Sonnet 5** — light ops only (not feature coding)

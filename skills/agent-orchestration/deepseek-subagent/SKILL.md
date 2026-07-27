@@ -1,24 +1,39 @@
 ---
 name: deepseek-subagent
-description: 'Launch DeepSeek V4 Pro as Stack A junior engineer (default implementer — does most coding work). Preferred harness: Hermes Agent (already on this machine). Use when the orchestrator (Opus 5) delegates a self-contained coding task with a complete brief. After DeepSeek, route to Grok senior review then Opus sign-off.'
+description: 'Launch DeepSeek as Stack A junior engineer. Default coding model is DeepSeek V4 Pro (Hermes implementer — most coding work). DeepSeek V4 Flash is the fast junior / chat lane (RAG, short edits, product chat) — not the default feature implementer. Use when the orchestrator (Opus 5) delegates a self-contained coding task with a complete brief. After Pro coding, route to Grok senior review then Opus sign-off.'
 disable-model-invocation: true
 ---
 
-# DeepSeek V4 Pro as Junior Engineer (Stack A)
+# DeepSeek as Junior Engineer (Stack A)
 
-DeepSeek is Stack A’s **default implementer** (junior engineer). It does **most of the work** from a complete brief.
+DeepSeek is Stack A’s **default implementer** family. Two lanes:
+
+| Lane | Slug | Role |
+|------|------|------|
+| **Pro** (default coding junior) | `deepseek-v4-pro` | Hermes implementer for features, fixes, tests, refactors |
+| **Flash** (fast junior / chat) | `deepseek-v4-flash` | Product chat, RAG Q&A, short mechanical edits, classification |
 
 **On this machine the coding harness is Hermes Agent** (`hermes` CLI) — not Aider, not host Task model-routing. Hermes already supports `--provider deepseek` and tool-calling (edit files, run shell, etc.).
 
-Senior review/fix: **Grok 4.5**. Final sign-off: **Opus 5**.
+Senior review/fix: **Grok 4.5**. Final sign-off: **Opus 5**. Light ops: **Sonnet 5**.
 
-## When to delegate
+## When to use Pro vs Flash
+
+### Pro — default for coding delegation
 
 - Self-contained coding task with clear success criteria (feature, fix, tests, refactor, investigate).
 - Bulk implementation while Opus stays free to plan and sign off.
 - Parallel independent tasks (prefer `--worktree` / one cwd ownership set per run).
+- User says “use Stack A and delegate” for **code**.
 
-Do NOT use DeepSeek as sole merge-gate reviewer or final sign-off.
+### Flash — fast junior / chat only
+
+- In-app chat and RAG answer generation (prefer Flash in product LLM clients).
+- Short one-file mechanical edits when explicitly requested or clearly tiny.
+- Classification / labeling / high-volume cheap inference.
+- User says “use Flash”, “cheap”, or “fast chat”.
+
+Do **not** silently pick Flash for multi-file features to save money. Do **not** use either DeepSeek model as sole merge-gate reviewer or final sign-off.
 
 ## Credentials (never commit / never echo)
 
@@ -31,8 +46,8 @@ source "$HOME/.config/stack-a/env" 2>/dev/null || true
 rg -q '^DEEPSEEK_API_KEY=.' "$HOME/.hermes/.env" && echo "Hermes DeepSeek key: present"
 ```
 
-- Preferred model slug: **`deepseek-v4-pro`** (API also offers `deepseek-v4-flash`).
-- Stack A env default: `DEEPSEEK_MODEL=deepseek-v4-pro`.
+- Coding default: **`deepseek-v4-pro`** (`DEEPSEEK_MODEL` in stack-a env).
+- Flash: **`deepseek-v4-flash`** (optional `DEEPSEEK_FLASH_MODEL` for product apps).
 - **Never** paste keys into prompts, commits, skill files, or chat logs.
 
 ## Preflight
@@ -44,7 +59,7 @@ rg -q '^DEEPSEEK_API_KEY=.' "$HOME/.hermes/.env" || echo "MISSING: add DEEPSEEK_
 # hermes chat -Q --yolo --provider deepseek -m deepseek-v4-pro -q "Reply with exactly: DEEPSEEK_OK"
 ```
 
-## Preferred launch — Hermes (default on this machine)
+## Preferred launch — Hermes Pro (default coding junior)
 
 Write a full brief to a file, then run Hermes **non-interactive** from the **repo root** (`--yolo` auto-approves tools for trusted user-owned repos only):
 
@@ -70,7 +85,7 @@ cat > "$PROMPT_FILE" <<'EOF'
 EOF
 
 cd "$REPO"
-# Non-interactive junior implementer:
+# Non-interactive junior implementer (Pro):
 hermes chat -Q --yolo \
   --provider deepseek \
   -m deepseek-v4-pro \
@@ -78,7 +93,6 @@ hermes chat -Q --yolo \
   -q "$(cat "$PROMPT_FILE")" \
   > "$OUT" 2>/tmp/deepseek-err.log
 
-# Or pass a long brief via multiple -q is not ideal — prefer one -q with full text.
 cat "$OUT"
 git -C "$REPO" status --short
 ```
@@ -95,12 +109,28 @@ nohup hermes chat -Q --yolo \
 echo "PID=$! OUT=$OUT"
 ```
 
+### Flash launch (only when appropriate)
+
+Same Hermes shape, different model — tiny briefs, user asked for Flash, or chat-style work:
+
+```bash
+hermes chat -Q --yolo \
+  --provider deepseek \
+  -m deepseek-v4-flash \
+  --max-turns 20 \
+  -q "$(cat "$PROMPT_FILE")" \
+  > "$OUT" 2>/tmp/deepseek-err.log
+```
+
+For **product apps**, prefer calling the OpenAI-compatible DeepSeek API with `model: deepseek-v4-flash` (or env `DEEPSEEK_FLASH_MODEL`) rather than spinning Hermes for every chat turn.
+
 ### Flags that matter
 
 | Flag | Meaning |
 |------|---------|
 | `--provider deepseek` | Use DeepSeek API (not NVIDIA/Ollama default) |
-| `-m deepseek-v4-pro` | Junior model (use `deepseek-v4-flash` only if user wants cheaper/faster) |
+| `-m deepseek-v4-pro` | **Default coding junior** |
+| `-m deepseek-v4-flash` | **Fast junior / chat** — only when lane matches |
 | `-q "..."` | Single-shot non-interactive query |
 | `-Q` | Quiet: final answer + session id |
 | `--yolo` | Auto-approve tools (trusted repos only) |
@@ -117,34 +147,41 @@ DeepSeek via Hermes sees **nothing** of the orchestrator chat — put everything
 
 ## After DeepSeek finishes
 
+**After Pro coding:**
+
 1. Read `$OUT` + `git status` / diff.
 2. Run verification commands (orchestrator).
 3. **Required for non-trivial work:** `grok-review` → fix via `grok-subagent` if needed.
 4. **Final:** Opus sign-off (`opus-review`).
 
+**After Flash chat / short edit:** verify if files changed; no full senior pipeline unless the edit was non-trivial.
+
 ## Failure modes
 
 | Symptom | Fix |
 |---------|-----|
-| Hermes uses wrong provider/model | Pass `--provider deepseek -m deepseek-v4-pro` explicitly |
+| Hermes uses wrong provider/model | Pass `--provider deepseek -m deepseek-v4-pro` (or flash) explicitly |
 | Auth / 401 | `DEEPSEEK_API_KEY` missing from `~/.hermes/.env` |
-| Model not found | Use exact slugs from API: `deepseek-v4-pro` or `deepseek-v4-flash` |
+| Model not found | Use exact slugs: `deepseek-v4-pro` or `deepseek-v4-flash` |
 | Hangs / tool prompts | Add `--yolo` on trusted repos; raise `--max-turns` |
 | “No harness” | Install Hermes (`hermes`) or Aider — do not hand-roll agents mid-task |
+| Feature coded on Flash poorly | Re-run on **Pro** with a full brief |
 
 ## Rules
 
 - One task per launch. Split big jobs.
+- **Pro** = default coding junior; **Flash** = fast/chat lane.
 - Junior only — never final sign-off.
 - Never log or commit API keys.
-- Default route when user says “use Stack A and delegate”: **this skill (Hermes + DeepSeek)**, not Ollama, not Grok-as-implementer.
+- Default route when user says “use Stack A and delegate” (code): **Hermes + Pro**, not Flash, not Ollama, not Grok-as-implementer.
 
 ## Relationship to other skills
 
 | Skill | Role |
 |-------|------|
-| `launch-subagent` | Stack A policy |
+| `launch-subagent` | Stack A policy (Pro vs Flash table) |
 | `deepseek-subagent` | Junior implementer (this file) |
 | `grok-review` | Senior review |
 | `grok-subagent` | Senior fix / hard rescue |
 | `opus-review` | Final sign-off |
+| Sonnet 5 host | Light ops (commit / merge / push) only |
