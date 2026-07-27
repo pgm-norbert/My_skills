@@ -10,11 +10,12 @@ See **[STACK-A.md](./STACK-A.md)** for the full guide.
 | Role | Model |
 |------|--------|
 | Orchestrator | **Opus 5** (host session) |
-| Junior engineer (most work) | **DeepSeek V4 Pro** (`deepseek-subagent`) |
+| Junior engineer (most coding) | **DeepSeek V4 Pro** (`deepseek-subagent`) |
 | Senior engineer | **Grok 4.5** (`grok-review` + `grok-subagent` fixes) |
+| Light ops | **Claude Sonnet 5** (commit / merge / push / PR) |
 | Final sign-off | **Opus 5** (`opus-review`) |
 
-Pipeline: **Opus plan → DeepSeek implement → Grok review/fix → Opus sign-off**.
+Pipeline: **Opus plan → DeepSeek implement → Grok review/fix → Opus sign-off → Sonnet for ship ceremony**.
 
 Key skills:
 
@@ -22,6 +23,7 @@ Key skills:
 - `skills/agent-orchestration/deepseek-subagent/` — junior implementer
 - `skills/agent-orchestration/grok-subagent/` — senior fixes / hard rescue
 - `skills/agent-orchestration/grok-review/` / `opus-review/` — senior review / final sign-off
+- Host **Sonnet 5** — light ops only (not feature coding)
 - `fable-review` / `gpt-review` — aliases → opus sign-off / grok senior review
 - `codex-subagent` — **legacy** OpenAI path only if you explicitly ask
 
