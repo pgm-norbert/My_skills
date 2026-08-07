@@ -4,6 +4,12 @@ description: 'Launch DeepSeek as Stack A junior engineer. Default coding model i
 disable-model-invocation: true
 ---
 
+> **DEPRECATED 2026-08-07 — DeepSeek is retired from Stack A.**
+> The default implementer is now **Grok 4.5** (`grok-subagent`); bounded mechanical
+> work goes to **GPT-5.6 Luna** (`luna-subagent`); review is **GPT-5.6 Sol**
+> (`sol-review`). Kept for reference only — do not route new work here.
+
+
 # DeepSeek as Junior Engineer (Stack A)
 
 DeepSeek is Stack A’s **default implementer** family. Two lanes:
