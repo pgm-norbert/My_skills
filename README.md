@@ -1,39 +1,45 @@
 # My_skills (pgm-norbert)
 
 Fork / working copy of davidondrej-style Agent Skills, with a personal
-**Stack A** orchestration policy (Opus + DeepSeek + Grok, not OpenAI-default).
+**Stack A** orchestration policy (Opus orchestrates, Grok implements, GPT-5.6 Sol reviews).
 
 ## Stack A (quality-first)
 
-See **[STACK-A.md](./STACK-A.md)** for the full guide.
+See **[STACK-A.md](./STACK-A.md)** for the full guide. The canonical policy lives
+in `~/.claude/CLAUDE.md`; `CLAUDE.global.snippet.md` here is generated from it.
 
 | Role | Model |
 |------|--------|
 | Orchestrator | **Opus 5** (host session) |
-| Junior engineer (most coding) | **DeepSeek V4 Pro** (`deepseek-subagent`) |
-| Fast junior / chat | **DeepSeek V4 Flash** (RAG, product chat, short edits) |
-| Senior engineer | **Grok 4.5** (`grok-review` + `grok-subagent` fixes) |
+| Senior engineer (most coding) | **Grok 4.5** (`grok-subagent`) |
+| Junior worker | **GPT-5.6 Luna** (`luna-subagent`) — bounded mechanical work |
+| Reviewer | **GPT-5.6 Sol**, falls back to GPT-5.5 / Terra (`sol-review`) |
 | Light ops | **Claude Sonnet 5** (commit / merge / push / PR) |
 | Final sign-off | **Opus 5** (`opus-review`) |
 
-Pipeline: **Opus plan → DeepSeek Pro implement → Grok review/fix → Opus sign-off → Sonnet for ship ceremony**.
+Pipeline: **Opus plan → Grok implement → Sol review/fix → Opus sign-off → Sonnet for ship ceremony**.
 
-DeepSeek lanes:
+The reviewer is deliberately a **different vendor** from the implementer. Never let
+a model review its own work.
 
-- **Pro** (`deepseek-v4-pro`) — default coding junior via Hermes.
-- **Flash** (`deepseek-v4-flash`) — fast junior / chat / RAG; not the default feature implementer.
+Worker lanes:
+
+- **Grok 4.5** — default implementer: features, multi-file fixes, tests, refactors.
+- **GPT-5.6 Luna** (`gpt-5.6-luna`) — bulk edits, classification, short mechanical
+  tasks; not the default feature implementer.
 
 Key skills:
 
 - `skills/agent-orchestration/launch-subagent/` — model policy
-- `skills/agent-orchestration/deepseek-subagent/` — junior implementer (Pro default; Flash optional)
-- `skills/agent-orchestration/grok-subagent/` — senior fixes / hard rescue
-- `skills/agent-orchestration/grok-review/` / `opus-review/` — senior review / final sign-off
+- `skills/agent-orchestration/grok-subagent/` — default implementer
+- `skills/agent-orchestration/luna-subagent/` — bounded mechanical work
+- `skills/agent-orchestration/sol-review/` — adversarial review (cross-vendor)
+- `skills/agent-orchestration/opus-review/` — final sign-off
 - Host **Sonnet 5** — light ops only (not feature coding)
-- `fable-review` / `gpt-review` — aliases → opus sign-off / grok senior review
-- `codex-subagent` — **legacy** OpenAI path only if you explicitly ask
+- `skills/agent-orchestration/deepseek-subagent/` — **DEPRECATED**, DeepSeek retired 2026-08-07
 
-DeepSeek credentials: local only `~/.config/stack-a/env` (never commit API keys).
+Credentials: the `grok` and `codex` CLIs authenticate themselves; anything else goes
+in `~/.config/stack-a/env` (never commit API keys).
 
 ## Upstream layout
 
