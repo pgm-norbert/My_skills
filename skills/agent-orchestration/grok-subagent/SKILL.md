@@ -1,106 +1,119 @@
 ---
 name: grok-subagent
-description: 'Launch xAI Grok 4.5 as Stack A senior engineer — review fixes, hard rescue, and non-trivial repair after DeepSeek junior work. Prefer deepseek-subagent for default implementation bulk.'
-disable-model-invocation: true
+description: 'Launch Grok 4.5 as the Stack A senior engineer — the default implementer. Use when a non-Grok host (Opus or Sonnet) delegates a self-contained coding task, and when fixing findings from sol-review. If this session is already Grok TUI, do not launch this skill — implement here and read stack-a-grok-host.'
 ---
 
-# Grok CLI as Senior Engineer (Stack A)
+# Grok 4.5 — senior engineer (Stack A default implementer)
 
-Grok CLI is xAI’s terminal coding agent. Headless mode (`-p` / `--prompt-file`) runs a **separate OS process**: full tool loop, own context, writes files in `--cwd`, then prints a final answer and exits. Auth is the user’s Grok login — never print credentials.
+Grok is Stack A's **default coder**. It implements from a complete brief and it
+fixes what the reviewer finds.
 
-Under Stack A, Grok is the **senior engineer**:
+## If you are already the Grok host
 
-- Reviews junior (DeepSeek) work and **implements fixes** for serious issues.
-- Hard rescue when DeepSeek is blocked (security, multi-system design, thrashing).
-- **Not** the default bulk implementer — that is **DeepSeek V4 Pro** (`deepseek-subagent`).
+Stop. Do **not** launch this skill. Implement in the current session.
+Read **`stack-a-grok-host`**. Spawning another Grok from Grok TUI is same-vendor
+and a wasted round-trip.
 
-Orchestrator + final sign-off remain **Opus 5**.
+This skill is for a **non-Grok host** (Opus / Sonnet in Claude Code) to launch
+Grok as a separate process.
 
-## When to delegate
+| Role | Model | Skill |
+|------|-------|-------|
+| Orchestrator | Opus 5 or Sonnet 5 (host) | — |
+| **Senior engineer** | **Grok 4.5** | **this skill** |
+| Junior worker | GPT-5.6 Luna | `luna-subagent` |
+| Reviewer | GPT-5.6 Sol → Terra /high | `sol-review` |
+| Sign-off | Opus 5 (Normal) / host (Saver or Grok-host) | `opus-review` |
 
-- Fix Critical/Important findings after `grok-review` (or after Opus notes issues on junior output).
-- Hard problem DeepSeek failed or should not own (security, auth, data loss risk).
-- User explicitly asks for Grok to implement.
-
-Do NOT use Grok as the default “do everything” implementer when DeepSeek can take the bulk.
+**The reviewer is deliberately a different vendor.** Never ask Grok to review its
+own work — in practice a model passes its own output every time.
 
 ## Preflight
 
 ```bash
-which grok || which grok   # expect ~/.grok/bin/grok or ~/.local/bin/grok
-grok models                # expect grok-4.5 listed; default may already be grok-4.5
+command -v grok >/dev/null || echo "MISSING: grok CLI (https://x.ai/cli)"
 ```
 
 Not authenticated → tell the user to log in via `grok` once. Never read or print auth tokens.
 
-## Launch (preferred — headless, capturable)
+## Launch
+
+Write the full brief to a file, then run from the repo root:
 
 ```bash
-OUT=$(mktemp /tmp/grok-out.XXXXXX)
-PROMPT_FILE=$(mktemp /tmp/grok-prompt.XXXXXX)
-cat > "$PROMPT_FILE" <<'EOF'
+REPO=/path/to/repo
+PROMPT=$(mktemp /tmp/grok-brief.XXXXXX)
+
+cat > "$PROMPT" <<'BRIEF'
 # Task
-(goal, constraints, files to touch, definition of done, verification commands)
+(goal, exact files, constraints, definition of done)
 
 # Context
-(paths, invariants, what NOT to change)
-# If fixing junior work: paste review findings verbatim
+(what already exists, what must not change, invariants that cost something to learn)
+
+# Verify
+(exact commands — and how to capture their REAL exit code)
 
 # Return
-- Short summary of what you changed
-- Commands you ran and results
-- Anything uncertain
-EOF
+- what you changed and what you deliberately left
+- verification output with real exit codes
+- every deviation from the brief, with reasoning
+- anything you could not verify
+BRIEF
 
-grok -p "$(cat "$PROMPT_FILE")" \
-  --cwd /path/to/repo \
+grok --prompt-file "$PROMPT" \
+  --cwd "$REPO" \
   -m grok-4.5 \
   --always-approve \
-  --output-format plain \
-  > "$OUT" 2>/tmp/grok-err.XXXXXX
-
-# Or long prompt via file:
-# grok --prompt-file "$PROMPT_FILE" --cwd /path/to/repo -m grok-4.5 --always-approve
+  --output-format plain
 ```
 
-### Background from Claude Code / host shell
+Run it in the background for anything non-trivial and poll, rather than blocking.
+
+## Writing the brief — what actually determines success
+
+Subagents start blind. Every one of these has caused a real failure when omitted:
+
+1. **Name the exact files.** A brief listing seven areas of work invites the agent
+   to build a codemod instead of doing the work. Narrow scope beats broad scope.
+2. **Give a reference, not a description.** Point at a commit
+   (`git show <sha> -- path/to/file`) and say "copy this approach exactly".
+   Prose descriptions of a pattern produce a second, different pattern.
+3. **State the invariants that cost something to learn**, each with the failure it
+   prevents. "Weight is integer hundredths of a kg" is forgettable; "never
+   re-derive a focused input from stored value — that logged 102.5 kg as 1025 kg"
+   is not.
+4. **Give mechanical pass/fail checks**, not "make sure it works". A command that
+   must return 0 cannot be self-reported as passing.
+5. **Forbid the tempting shortcut by name.** If there is an easy fix that would
+   hide the symptom rather than solve it, say so explicitly.
+
+## After it finishes — verify before believing
+
+Agents have reported "verified" on work that did not build, was never committed,
+and was never rendered. Check, in this order:
 
 ```bash
-nohup grok --prompt-file "$PROMPT_FILE" \
-  --cwd /path/to/repo \
-  -m grok-4.5 \
-  --always-approve \
-  --output-format plain \
-  > "$OUT" 2>/tmp/grok-err.log &
-echo "GROK_PID=$! OUT=$OUT"
+git -C "$REPO" log --oneline <base>..HEAD    # did it actually commit?
+git -C "$REPO" status --short                # or is it stranded uncommitted?
 ```
 
-## Model rules
+Then re-run the verification yourself and capture the **real** exit code — never
+read `$?` after a pipe, which reports the last command in the pipeline:
 
-- Always use **Grok 4.5** (`-m grok-4.5`) unless the user names another Grok model.
-- Grok sees **nothing** of the orchestrator’s conversation. Put all context in the prompt file.
-- After exit: read `$OUT`, then `git -C /path/to/repo status --short` and relevant diffs.
-- Orchestrator runs tests / typecheck; do not trust “done” without evidence.
-- After Grok fixes: **Opus final sign-off** (`opus-review`).
+```bash
+<verify-command> > /tmp/v.log 2>&1; echo "EXIT=$?"
+```
 
-## Parallel runs
+For UI work, look at it. A DOM or screenshot check catches in one command what a
+report will not tell you.
 
-One worktree (or disjoint file ownership) per Grok process.
+## Then
 
-## Failure modes
+Findings → **`sol-review`** (cross-vendor). Fixes → back here (or, on a Grok host,
+fix in-session). Sign-off → **Opus** in Normal mode; the host verifies in Saver
+or Grok-host mode.
 
-- Empty / hung output → check `/tmp/grok-err*`, auth, and that `--cwd` exists.
-- Permission prompts → pass `--always-approve` (only on trusted repos the user owns).
-- Rate limits → report to user; do not tight-loop retry.
-- Model not found → run `grok models` and pick the closest available Grok 4.x slug.
+## Credentials
 
-## Relationship to other skills
-
-| Skill | Role |
-|-------|------|
-| `launch-subagent` | Stack A policy |
-| `deepseek-subagent` | Junior implementer (most work) |
-| `grok-subagent` | Senior fix / hard rescue (this file) |
-| `grok-review` | Senior review report |
-| `opus-review` | Final sign-off |
-| `codex-subagent` | Legacy OpenAI path — only if user asks |
+Load via `source ~/.config/stack-a/env`. Never print or commit a key.

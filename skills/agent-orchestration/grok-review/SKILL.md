@@ -1,63 +1,17 @@
 ---
 name: grok-review
-description: 'Launch Grok 4.5 as Stack A senior engineer for a deep review of junior (DeepSeek) work, or when the user says "/grok-review". After review, use grok-subagent to fix serious issues. Final sign-off remains Opus 5.'
+description: 'MOVED. Grok is the Stack A implementer, not the reviewer. Adversarial review is sol-review (GPT-5.6 Sol → Terra /high) — deliberately a different vendor. Use grok-subagent to implement and fix. If this session is already Grok TUI, use stack-a-grok-host.'
+disable-model-invocation: true
 ---
 
-# Grok Review — Senior Engineer (Stack A)
+# grok-review has moved (2026-08-07)
 
-Launch **Grok 4.5** to review work fully and carefully, as a **senior engineer** reviewing a **junior** (usually DeepSeek V4 Pro).
+Grok 4.5 is the **implementer**, so it can no longer be the reviewer — a
+model asked to review its own work approves it.
 
-**When to use:**
+- Review → **`sol-review`**
+- Implement and fix (from a non-Grok host) → **`grok-subagent`**
+- Implement and fix (this session is Grok TUI) → **`stack-a-grok-host`**
+- Sign-off → **`opus-review`** (or the Grok host, if Opus is at session limit)
 
-- After **DeepSeek** (or any junior) implements a non-trivial task.
-- When the user says `/grok-review` / “grok review”.
-- Optionally after Opus self-implemented something and wants a senior pass (still Grok).
-
-**Not** final product sign-off — that is **Opus 5** (`opus-review`).
-
-## How to launch
-
-Prefer headless Grok CLI (separate process):
-
-```bash
-OUT=$(mktemp /tmp/grok-review.XXXXXX)
-PROMPT_FILE=$(mktemp /tmp/grok-review-prompt.XXXXXX)
-cat > "$PROMPT_FILE" <<'EOF'
-You are a senior engineer reviewing a junior's work. Be neutral. Do not redesign for taste.
-
-## Scope
-(paths / PR / branch / what changed)
-(note: implementer was DeepSeek V4 Pro junior unless stated otherwise)
-
-## What to do
-- Go deep: correctness, edge cases, security, missing tests, merge risk
-- Separate: Critical / Important / Minor
-- For Critical/Important: say how to fix (concrete)
-- Do not implement fixes in this pass unless the brief says "review and fix"
-- Final report: concise plain English — safe to proceed to Opus sign-off or not; list issues
-
-## Constraints
-- Do not nudge yourself toward approving
-- Prefer evidence (file:line, failing scenarios)
-EOF
-
-grok --prompt-file "$PROMPT_FILE" \
-  --cwd /path/to/repo \
-  -m grok-4.5 \
-  --always-approve \
-  --output-format plain \
-  > "$OUT"
-cat "$OUT"
-```
-
-If findings need code changes → **`grok-subagent`** with the findings list (senior fix).
-
-## After it finishes
-
-Show the user the reviewer’s **exact response in full**. Do not rewrite it.
-
-Then: fixes (Grok) → **Opus final sign-off**.
-
-## Aliases
-
-`/gpt-review` under Stack A maps here (**Grok 4.5** senior), not OpenAI GPT.
+If you reached this skill from an old brief or habit, use `sol-review`.

@@ -1,7 +1,8 @@
 # My_skills (pgm-norbert)
 
 Fork / working copy of davidondrej-style Agent Skills, with a personal
-**Stack A** orchestration policy (Opus orchestrates, Grok implements, GPT-5.6 Sol reviews).
+**Stack A** orchestration policy (Grok implements, GPT-5.6 Sol/Terra reviews,
+orchestrator depends on the host).
 
 ## Stack A (quality-first)
 
@@ -10,32 +11,32 @@ in `~/.claude/CLAUDE.md`; `CLAUDE.global.snippet.md` here is generated from it.
 
 | Role | Model |
 |------|--------|
-| Orchestrator | **Opus 5** (host session) |
-| Senior engineer (most coding) | **Grok 4.5** (`grok-subagent`) |
+| Orchestrator | **Opus 5** (Normal) / **Sonnet 5** (Opus-Saver) / **Grok TUI** (Grok-host) |
+| Senior engineer (most coding) | **Grok 4.5** (`grok-subagent`, or in-session on Grok-host) |
 | Junior worker | **GPT-5.6 Luna** (`luna-subagent`) — bounded mechanical work |
-| Reviewer | **GPT-5.6 Sol**, falls back to GPT-5.5 / Terra (`sol-review`) |
+| Reviewer | **GPT-5.6 Sol → Terra /high** (`sol-review`) |
 | Light ops | **Claude Sonnet 5** (commit / merge / push / PR) |
-| Final sign-off | **Opus 5** (`opus-review`) |
+| Final sign-off | **Opus 5** (`opus-review`); host verifies when Opus is maxed |
 
-Pipeline: **Opus plan → Grok implement → Sol review/fix → Opus sign-off → Sonnet for ship ceremony**.
+Pipeline: **host plans → Grok implements → Sol/Terra reviews → Grok fixes → host verifies**.
 
 The reviewer is deliberately a **different vendor** from the implementer. Never let
 a model review its own work.
 
-Worker lanes:
+Host modes:
 
-- **Grok 4.5** — default implementer: features, multi-file fixes, tests, refactors.
-- **GPT-5.6 Luna** (`gpt-5.6-luna`) — bulk edits, classification, short mechanical
-  tasks; not the default feature implementer.
+- **Normal** — Opus in Claude Code, Grok via `grok-subagent`.
+- **Opus-Saver** — Sonnet orchestrates at ~70% Opus usage.
+- **Grok-host** — Opus at session limit; implement in the Grok TUI (`stack-a-grok-host`).
 
 Key skills:
 
 - `skills/agent-orchestration/launch-subagent/` — model policy
-- `skills/agent-orchestration/grok-subagent/` — default implementer
+- `skills/agent-orchestration/stack-a-grok-host/` — Grok TUI is the host
+- `skills/agent-orchestration/grok-subagent/` — default implementer from a non-Grok host
 - `skills/agent-orchestration/luna-subagent/` — bounded mechanical work
 - `skills/agent-orchestration/sol-review/` — adversarial review (cross-vendor)
 - `skills/agent-orchestration/opus-review/` — final sign-off
-- Host **Sonnet 5** — light ops only (not feature coding)
 - `skills/agent-orchestration/deepseek-subagent/` — **DEPRECATED**, DeepSeek retired 2026-08-07
 
 Credentials: the `grok` and `codex` CLIs authenticate themselves; anything else goes

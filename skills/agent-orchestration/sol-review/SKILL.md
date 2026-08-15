@@ -13,25 +13,19 @@ then to **Opus** for sign-off.
 work approves it. Cross-vendor review is the only step in this pipeline that has
 reliably found Criticals that green test suites missed.
 
-## Model availability — check before assuming
+## Model availability — probe every session
 
-Verified 2026-08-07:
+Do not trust a cached "Sol is down" / "Sol is up" note. Re-probe.
 
-| Model | Status |
-|-------|--------|
-| `gpt-5.6-terra` | available — **the fallback reviewer**, run at `high` effort |
+| Model | Last probe (2026-08-15) |
+|-------|-------------------------|
+| `gpt-5.6-sol` | **available** on this ChatGPT-account Codex login |
+| `gpt-5.6-terra` | available — fallback reviewer, run at `high` |
 | `gpt-5.6-luna` | available (junior lane) |
 | `gpt-5.5` | available |
-| `gpt-5.6-sol` | **NOT available on a ChatGPT-account Codex login** |
 
-Sol returns:
-
-```
-The 'gpt-5.6-sol' model is not supported when using Codex with a ChatGPT account.
-```
-
-It needs API-key auth or a higher plan tier. **Probe first, fall back to Terra at
-high reasoning effort:**
+If Sol returns `not supported`, it needs API-key auth or a higher plan tier.
+**Always probe first, fall back to Terra at high reasoning effort:**
 
 ```bash
 MODEL=gpt-5.6-sol

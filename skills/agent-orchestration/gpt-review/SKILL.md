@@ -1,15 +1,14 @@
 ---
 name: gpt-review
-description: 'Alias → grok-review (Stack A). Grok 4.5 senior review of junior (DeepSeek) work. Triggers: /gpt-review, gpt review.'
+description: 'Alias → sol-review (Stack A). Adversarial review of Grok work by GPT-5.6 Sol → Terra /high. Triggers: /gpt-review, gpt review. Not Grok reviewing itself.'
 ---
 
-# gpt-review → grok-review (Stack A senior engineer)
+# gpt-review → sol-review (Stack A reviewer)
 
 This skill is kept as a **compat alias**.
 
-Under **Stack A (quality-first)**:
+- Reviewer is **GPT-5.6 Sol**, falling back to **Terra /high** — a different
+  vendor from the Grok implementer.
+- Do **not** route this to `grok-review`. Grok does not review Grok.
 
-- Model is **Grok 4.5** (not OpenAI GPT Sol).
-- Use for **senior review** of junior (DeepSeek) work; then fix via `grok-subagent` if needed.
-
-**Follow the full instructions in `grok-review`.** Prefer headless `grok -m grok-4.5` with a neutral review prompt.
+**Follow the full instructions in `sol-review`.**
