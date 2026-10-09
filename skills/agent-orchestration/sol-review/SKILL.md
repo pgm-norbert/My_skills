@@ -39,8 +39,8 @@ for m in $GPT_REVIEWERS; do
     echo "ChatGPT usage limit hit: $(echo "$out" | grep -o 'try again at [^.]*' | head -1)"
     break                                   # every GPT on this account is out — stop probing
   fi
-  echo "$out" | grep -qE "not supported|ERROR" && continue
-  MODEL=$m; break
+  # success = the model actually answered; anything else (plan-gated, transient error) → next
+  if echo "$out" | grep -qx "OK"; then MODEL=$m; break; fi
 done
 EFFORT=xhigh   # flagship; use high for an older fallback
 echo "reviewer: ${MODEL:-NONE}"
