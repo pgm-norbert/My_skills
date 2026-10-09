@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# stack-a-models — discover the newest models for each Stack A seat at run time,
+# so the skills never pin a model that has since been superseded.
+#
+# Prints shell-sourceable KEY=value lines:
+#   GROK_IMPLEMENTER   newest grok-X.Y (base model, not a -fast variant)
+#   GPT_REVIEWERS      space-separated reviewer chain, newest flagship first
+#   GPT_REVIEWER       first entry of the chain
+#   GPT_JUNIOR         newest "luna" model (bulk/mechanical lane)
+#
+# Usage:  eval "$(~/.config/stack-a/stack-a-models)"
+#
+# Sources of truth (no network, no tokens spent):
+#   grok:  `grok models`                     (lists what this login can use)
+#   gpt:   ~/.codex/models_cache.json        (the list the Codex CLI itself uses)
+# Callers should still probe the chosen model once ("reply OK") and fall back
+# down the chain on "not supported" — a listed model can be plan-gated.
+
+set -u
+
+# --- Grok: highest grok-X.Y version, ignoring suffixed variants (-fast, -build-fast, …)
+grok_latest=""
+if command -v grok >/dev/null 2>&1; then
+  grok_latest=$(grok models 2>/dev/null \
+    | grep -oE '\bgrok-[0-9]+(\.[0-9]+)?\b(-[a-z-]+)?' \
+    | grep -vE '^grok-[0-9.]+-' \
+    | sort -u -V | tail -1)
+fi
+echo "GROK_IMPLEMENTER=${grok_latest:-grok-4.7}"
+
+# --- GPT: versioned flagships (gpt-<ver>-<name> or gpt-<ver>), newest version first,
+# Codex cache order preserved within a version. Junior/utility lanes excluded.
+cache="$HOME/.codex/models_cache.json"
+python3 -I - "$cache" <<'PY'
+import json, re, sys
+path = sys.argv[1]
+try:
+    data = json.load(open(path))
+except Exception:
+    data = {}
+models = data.get("models", data) if isinstance(data, dict) else data
+slugs = [m.get("slug") or m.get("id") for m in models if isinstance(m, dict)] if isinstance(models, list) else []
+pat = re.compile(r"^gpt-(\d+(?:\.\d+)?)(?:-([a-z]+))?$")
+junior_names = {"luna", "mini", "nano"}
+flag, junior = [], []
+for i, s in enumerate(slugs):
+    if not s:
+        continue
+    m = pat.match(s)
+    if not m:
+        continue  # e.g. gpt-reserve, codex-auto-review
+    ver = tuple(int(x) for x in m.group(1).split("."))
+    name = m.group(2) or ""
+    (junior if name in junior_names else flag).append((ver, i, s))
+flag.sort(key=lambda t: (tuple(-v for v in t[0]), t[1]))
+junior.sort(key=lambda t: (tuple(-v for v in t[0]), t[1]))
+chain = [s for _, _, s in flag] or ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra"]
+print("GPT_REVIEWERS='" + " ".join(chain) + "'")
+print("GPT_REVIEWER=" + chain[0])
+print("GPT_JUNIOR=" + (junior[0][2] if junior else "gpt-5.6-luna"))
+PY

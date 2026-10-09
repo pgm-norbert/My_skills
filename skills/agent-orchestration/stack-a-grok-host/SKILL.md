@@ -13,7 +13,7 @@ You are the orchestrator **and** the implementer.
 | Seat | Who |
 |------|-----|
 | Orchestrator + implementer | **This Grok session** |
-| Reviewer | **`sol-review`** (GPT-5.6 Sol → Terra /high) — different vendor, required |
+| Reviewer | **`sol-review`** (newest GPT flagship — GPT-6-Astra as of 2026-10-09 — then older flagships) — different vendor, required |
 | Mechanical grunt | **`luna-subagent`** — bulk find/replace only |
 | Opus | Out. Do not wait. Do not spawn. High-risk sign-off is deferred. |
 
@@ -38,17 +38,13 @@ Cross-vendor review still holds: Grok writes, a GPT reviews. Same-vendor review 
 
 ## Review
 
-Follow `sol-review`. Probe Sol first; fall back to Terra at `high`.
+Follow `sol-review`: discover the newest GPT flagship and probe down the chain.
 
 ```bash
-MODEL=gpt-5.6-sol
-EFFORT=xhigh
-if codex exec -m "$MODEL" --skip-git-repo-check -s read-only "reply OK" </dev/null 2>&1 \
-     | grep -q "not supported"; then
-  MODEL=gpt-5.6-terra
-  EFFORT=high
-fi
+eval "$(~/.config/stack-a/stack-a-models)"   # GPT_REVIEWERS, newest first
 ```
+
+Use the probe loop in `sol-review` (it also stops cleanly on the ChatGPT usage limit).
 
 ## When Opus comes back
 

@@ -1,47 +1,58 @@
 ---
 name: sol-review
-description: 'Adversarial code review by GPT-5.6 Sol (falls back to GPT-5.5) — the Stack A reviewer. Cross-vendor from Grok, which implements. Use after grok-subagent lands work and before Opus sign-off, or when the user says /sol-review. Reviews only; fixes go back to grok-subagent.'
+description: 'Adversarial code review by the NEWEST OpenAI GPT flagship (auto-discovered; GPT-6-Astra as of 2026-10-09, then older flagships as fallback) — the Stack A reviewer. Cross-vendor from Grok, which implements. Use after grok-subagent lands work and before Opus sign-off, or when the user says /sol-review or /gpt-review. Reviews only; fixes go back to grok-subagent.'
 disable-model-invocation: true
 ---
 
-# GPT Sol — Stack A reviewer
+# GPT review — Stack A reviewer (newest GPT flagship)
 
-Sol reviews. It does not implement. Findings go back to **Grok** (`grok-subagent`),
+The newest GPT flagship reviews. It does not implement. (The skill keeps the name
+`sol-review` for compatibility — the model is whatever is newest, not necessarily Sol.) Findings go back to **Grok** (`grok-subagent`),
 then to **Opus** for sign-off.
 
 **Why a different vendor from the implementer:** a model asked to review its own
 work approves it. Cross-vendor review is the only step in this pipeline that has
 reliably found Criticals that green test suites missed.
 
-## Model availability — probe every session
+## Model selection — always the newest, discovered at run time
 
-Do not trust a cached "Sol is down" / "Sol is up" note. Re-probe.
-
-| Model | Last probe (2026-08-15) |
-|-------|-------------------------|
-| `gpt-5.6-sol` | **available** on this ChatGPT-account Codex login |
-| `gpt-5.6-terra` | available — fallback reviewer, run at `high` |
-| `gpt-5.6-luna` | available (junior lane) |
-| `gpt-5.5` | available |
-
-If Sol returns `not supported`, it needs API-key auth or a higher plan tier.
-**Always probe first, fall back to Terra at high reasoning effort:**
+Never hardcode a reviewer model. OpenAI ships new flagships often; a pinned name
+goes stale. Discover the chain from the Codex CLI's own model list:
 
 ```bash
-MODEL=gpt-5.6-sol
-EFFORT=xhigh
-if codex exec -m "$MODEL" --skip-git-repo-check -s read-only "reply OK" </dev/null 2>&1 \
-     | grep -q "not supported"; then
-  MODEL=gpt-5.6-terra
-  EFFORT=high
-fi
-echo "reviewer: $MODEL (effort $EFFORT)"
+eval "$(~/.config/stack-a/stack-a-models)"   # sets GPT_REVIEWERS / GPT_REVIEWER
+echo "reviewer chain: $GPT_REVIEWERS"         # e.g. gpt-6-astra gpt-5.6-sol gpt-5.6-terra gpt-5.5
 ```
 
-Terra is still cross-vendor from Grok, so the point of the step survives the
-fallback. Run it at `high` — review is the one stage where reasoning effort earns
-its cost, and a cheap review is worse than none because it manufactures
-confidence.
+As of 2026-10-09 that resolves to **`gpt-6-astra`** (GPT-6-Astra) first, then
+Sol → Terra → 5.5. Script source: `~/Documents/My_skills/bin/stack-a-models`
+(reads `~/.codex/models_cache.json`; no network, no tokens).
+
+**Probe, then fall down the chain.** A listed model can be plan-gated, and the
+whole ChatGPT account can hit its usage limit:
+
+```bash
+MODEL=""
+for m in $GPT_REVIEWERS; do
+  out=$(codex exec -m "$m" --skip-git-repo-check -s read-only "reply with exactly: OK" </dev/null 2>&1)
+  if echo "$out" | grep -q "usage limit"; then
+    echo "ChatGPT usage limit hit: $(echo "$out" | grep -o 'try again at [^.]*' | head -1)"
+    break                                   # every GPT on this account is out — stop probing
+  fi
+  echo "$out" | grep -qE "not supported|ERROR" && continue
+  MODEL=$m; break
+done
+EFFORT=xhigh   # flagship; use high for an older fallback
+echo "reviewer: ${MODEL:-NONE}"
+```
+
+**If `MODEL` is empty because of the usage limit:** do not merge high-risk work on
+Grok's word alone. Either wait for the reset time printed above, or — only when
+the user agrees — run the review with a Claude model that is not the orchestrator
+(e.g. `fable-review`). That is still cross-vendor from the Grok implementer.
+
+Run at `xhigh` for the flagship. Review is the one stage where reasoning effort
+earns its cost; a cheap review manufactures confidence.
 
 ## Launch
 
@@ -51,8 +62,9 @@ PROMPT=$(mktemp /tmp/sol-review.XXXXXX)
 OUT=$(mktemp /tmp/sol-out.XXXXXX)
 
 cat > "$PROMPT" <<'BRIEF'
-You are the senior reviewer. The implementer was Grok 4.5. Adversarial stance:
-green CI is not a verdict.
+You are the senior reviewer. The implementer was Grok. Adversarial stance:
+green CI is not a verdict. Review it yourself — do NOT spawn sub-agents or
+load orchestration skills (it burns the shared usage limit).
 
 ## Under review
     git log --oneline <base>..HEAD

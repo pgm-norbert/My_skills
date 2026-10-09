@@ -1,12 +1,12 @@
 ---
 name: codex-subagent
-description: 'LEGACY (not Stack A default). Launch OpenAI Codex CLI as a subagent. Stack A prefers grok-subagent (Grok 4.5) for hard execution. Use only when the user explicitly asks for Codex / GPT Sol.'
+description: 'LEGACY (not Stack A default). Launch OpenAI Codex CLI as a subagent. Stack A prefers grok-subagent (the newest Grok (4.7)) for hard execution. Use only when the user explicitly asks for Codex / GPT Sol.'
 disable-model-invocation: true
 ---
 
 # Codex CLI as a Subagent (legacy / opt-in)
 
-> **Stack A:** default hard executor is **Grok 4.5** via `grok-subagent`. Use this skill only when the user explicitly wants OpenAI Codex.
+> **Stack A:** default hard executor is **the newest Grok (4.7)** via `grok-subagent`. Use this skill only when the user explicitly wants OpenAI Codex.
 
 Codex CLI is OpenAI's terminal coding agent. `codex exec` runs it non-interactively:
 it works autonomously in a sandbox, streams progress to stderr, and prints only the
@@ -36,7 +36,7 @@ Never read, print, or copy credentials (`~/.codex/auth.json`).
 OUT=$(mktemp /tmp/codex-out.XXXXXX)
 codex exec \
   --cd /path/to/repo \
-  --model gpt-5.6-sol \
+  --model "$GPT_REVIEWER" \
   --config model_reasoning_effort=high \
   --sandbox workspace-write \
   --output-last-message "$OUT" \
@@ -44,7 +44,7 @@ codex exec \
   </dev/null
 ```
 
-- Always use GPT 5.6 Sol (`gpt-5.6-sol`). Default reasoning effort to `high`.
+- Always use the newest GPT flagship: `eval "$(~/.config/stack-a/stack-a-models)"` then `--model "$GPT_REVIEWER"` (GPT-6-Astra as of 2026-10-09). Default reasoning effort to `high`.
   Pass both flags explicitly on every new Codex run.
 - Do NOT use Codex fast mode.
 - `</dev/null` is MANDATORY when stdin is not a real terminal (background shells,
@@ -78,7 +78,7 @@ results merge cleanly. One git worktree per Codex run — never two in the same 
 
 ```bash
 git worktree add /tmp/wt-taskA -b codex/task-a
-codex exec --cd /tmp/wt-taskA --model gpt-5.6-sol \
+codex exec --cd /tmp/wt-taskA --model "$GPT_REVIEWER" \
   --config model_reasoning_effort=high --sandbox workspace-write \
   -o /tmp/outA.md "task A" </dev/null
 ```

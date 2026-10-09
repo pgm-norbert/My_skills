@@ -1,6 +1,6 @@
 ---
 name: opus-review
-description: 'Opus 5 final sign-off (Stack A). Use after Grok implemented and Sol/Terra reviewed and findings were fixed, or when the user says /opus-review. Last gate before claiming done. If Opus is at session limit, the Grok host verifies instead — read stack-a-grok-host, do not block.'
+description: 'Opus 5 final sign-off (Stack A). Use after Grok implemented and GPT reviewed and findings were fixed, or when the user says /opus-review. Last gate before claiming done. If Opus is at session limit, the Grok host verifies instead — read stack-a-grok-host, do not block.'
 disable-model-invocation: true
 ---
 
@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 The last gate. Runs in the Opus host session; nothing is delegated.
 
-`plan → Grok implement → Sol/Terra review → Grok fix → **sign-off**`
+`plan → Grok implement → GPT review → Grok fix → **sign-off**`
 
 ## If Opus is at session limit
 

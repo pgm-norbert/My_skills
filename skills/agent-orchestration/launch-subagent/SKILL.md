@@ -1,6 +1,6 @@
 ---
 name: launch-subagent
-description: 'Read BEFORE launching any subagent — Task tool, background agents, parallel agents, delegating work. Stack A routing (Opus/Sonnet/Grok-host orchestrates, Grok implements, Luna does mechanical work, Sol/Terra reviews) plus the brief-writing and verification rules that determine whether delegation works.'
+description: 'Read BEFORE launching any subagent — Task tool, background agents, parallel agents, delegating work. Stack A routing (Opus/Sonnet/Grok-host orchestrates, Grok implements, Luna does mechanical work, the newest GPT reviews) plus the brief-writing and verification rules that determine whether delegation works.'
 disable-model-invocation: true
 ---
 
@@ -16,10 +16,10 @@ First: **which host is this?**
 
 | Need | Route to |
 |------|----------|
-| Feature work, fixes, refactors (non-Grok host) | **`grok-subagent`** (Grok 4.5) |
+| Feature work, fixes, refactors (non-Grok host) | **`grok-subagent`** (the newest Grok (4.7)) |
 | Same, but this session is already Grok | **this session** (`stack-a-grok-host`) |
-| Bounded mechanical work, bulk edits, classification | **`luna-subagent`** (GPT-5.6 Luna) |
-| Adversarial review | **`sol-review`** (GPT-5.6 Sol → Terra /high) |
+| Bounded mechanical work, bulk edits, classification | **`luna-subagent`** (newest GPT Luna) |
+| Adversarial review | **`sol-review`** (newest GPT flagship (GPT-6-Astra) → older flagships) |
 | Commit / merge / push / PR | Sonnet 5 light ops (or this host, if already Grok) |
 | Final sign-off | **`opus-review`** — or the Grok host if Opus is maxed |
 
@@ -50,7 +50,7 @@ For UI work, look at it.
 ## Cross-vendor review is not optional
 
 The implementer and the reviewer must be different vendors. Grok implements,
-Sol/Terra reviews. Every Critical found in this pipeline has come from that step,
+the newest GPT reviews. Every Critical found in this pipeline has come from that step,
 not from the test suite.
 
 ## Briefs go in a file, not a flag

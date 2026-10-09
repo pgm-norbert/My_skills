@@ -1,7 +1,7 @@
 # My_skills (pgm-norbert)
 
 Fork / working copy of davidondrej-style Agent Skills, with a personal
-**Stack A** orchestration policy (Grok implements, GPT-5.6 Sol/Terra reviews,
+**Stack A** orchestration policy (Grok implements, the newest GPT flagship reviews,
 orchestrator depends on the host).
 
 ## Stack A (quality-first)
@@ -12,13 +12,13 @@ in `~/.claude/CLAUDE.md`; `CLAUDE.global.snippet.md` here is generated from it.
 | Role | Model |
 |------|--------|
 | Orchestrator | **Opus 5** (Normal) / **Sonnet 5** (Opus-Saver) / **Grok TUI** (Grok-host) |
-| Senior engineer (most coding) | **Grok 4.5** (`grok-subagent`, or in-session on Grok-host) |
-| Junior worker | **GPT-5.6 Luna** (`luna-subagent`) — bounded mechanical work |
-| Reviewer | **GPT-5.6 Sol → Terra /high** (`sol-review`) |
+| Senior engineer (most coding) | **the newest Grok (4.7)** (`grok-subagent`, or in-session on Grok-host) |
+| Junior worker | **newest GPT Luna** (`luna-subagent`) — bounded mechanical work |
+| Reviewer | **newest GPT flagship (GPT-6-Astra) → older flagships** (`sol-review`) |
 | Light ops | **Claude Sonnet 5** (commit / merge / push / PR) |
 | Final sign-off | **Opus 5** (`opus-review`); host verifies when Opus is maxed |
 
-Pipeline: **host plans → Grok implements → Sol/Terra reviews → Grok fixes → host verifies**.
+Pipeline: **host plans → Grok implements → the newest GPT reviews → Grok fixes → host verifies**.
 
 The reviewer is deliberately a **different vendor** from the implementer. Never let
 a model review its own work.

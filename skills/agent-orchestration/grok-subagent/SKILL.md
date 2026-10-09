@@ -1,9 +1,9 @@
 ---
 name: grok-subagent
-description: 'Launch Grok 4.5 as the Stack A senior engineer — the default implementer. Use when a non-Grok host (Opus or Sonnet) delegates a self-contained coding task, and when fixing findings from sol-review. If this session is already Grok TUI, do not launch this skill — implement here and read stack-a-grok-host.'
+description: 'Launch the NEWEST Grok (auto-discovered; grok-4.7 as of 2026-10-09) as the Stack A senior engineer — the default implementer. Use when a non-Grok host (Opus or Sonnet) delegates a self-contained coding task, and when fixing findings from sol-review. If this session is already Grok TUI, do not launch this skill — implement here and read stack-a-grok-host.'
 ---
 
-# Grok 4.5 — senior engineer (Stack A default implementer)
+# Grok (newest) — senior engineer (Stack A default implementer)
 
 Grok is Stack A's **default coder**. It implements from a complete brief and it
 fixes what the reviewer finds.
@@ -20,9 +20,9 @@ Grok as a separate process.
 | Role | Model | Skill |
 |------|-------|-------|
 | Orchestrator | Opus 5 or Sonnet 5 (host) | — |
-| **Senior engineer** | **Grok 4.5** | **this skill** |
-| Junior worker | GPT-5.6 Luna | `luna-subagent` |
-| Reviewer | GPT-5.6 Sol → Terra /high | `sol-review` |
+| **Senior engineer** | **Newest Grok** (grok-4.7 as of 2026-10-09) | **this skill** |
+| Junior worker | Newest GPT Luna (gpt-5.6-luna) | `luna-subagent` |
+| Reviewer | Newest GPT flagship (GPT-6-Astra) → older flagships | `sol-review` |
 | Sign-off | Opus 5 (Normal) / host (Saver or Grok-host) | `opus-review` |
 
 **The reviewer is deliberately a different vendor.** Never ask Grok to review its
@@ -42,6 +42,7 @@ Write the full brief to a file, then run from the repo root:
 
 ```bash
 REPO=/path/to/repo
+eval "$(~/.config/stack-a/stack-a-models)"   # GROK_IMPLEMENTER = newest grok-X.Y (never pin)
 PROMPT=$(mktemp /tmp/grok-brief.XXXXXX)
 
 cat > "$PROMPT" <<'BRIEF'
@@ -63,7 +64,7 @@ BRIEF
 
 grok --prompt-file "$PROMPT" \
   --cwd "$REPO" \
-  -m grok-4.5 \
+  -m "$GROK_IMPLEMENTER" \
   --always-approve \
   --output-format plain
 ```

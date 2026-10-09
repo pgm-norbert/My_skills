@@ -1,10 +1,10 @@
 ---
 name: luna-subagent
-description: 'Launch GPT-5.6 Luna as the Stack A junior worker for bounded mechanical work — bulk edits across many files, short single-file changes, classification. NOT the default implementer; feature coding goes to grok-subagent. Keep its scope narrow.'
+description: 'Launch newest GPT Luna as the Stack A junior worker for bounded mechanical work — bulk edits across many files, short single-file changes, classification. NOT the default implementer; feature coding goes to grok-subagent. Keep its scope narrow.'
 disable-model-invocation: true
 ---
 
-# GPT-5.6 Luna — junior worker
+# newest GPT Luna — junior worker
 
 Luna handles **bounded mechanical work**. It is not the default implementer —
 that is Grok (`grok-subagent`).
@@ -19,18 +19,19 @@ anything where "which option is right here" is part of the task.
 
 ## Preflight
 
-`gpt-5.6-luna` was verified available on the ChatGPT-account Codex login
-(2026-08-07). Confirm before a long run:
+Use the newest Luna-class model, discovered at run time (gpt-5.6-luna as of
+2026-10-09). Confirm before a long run:
 
 ```bash
-codex exec -m gpt-5.6-luna --skip-git-repo-check -s read-only "reply OK" </dev/null
+eval "$(~/.config/stack-a/stack-a-models)"   # GPT_JUNIOR = newest luna/mini model
+codex exec -m "$GPT_JUNIOR" --skip-git-repo-check -s read-only "reply OK" </dev/null
 ```
 
 ## Launch
 
 ```bash
 REPO=/path/to/repo
-codex exec -m gpt-5.6-luna \
+codex exec -m "$GPT_JUNIOR" \
   --skip-git-repo-check \
   -C "$REPO" \
   "$(cat /tmp/luna-brief.md)" </dev/null
