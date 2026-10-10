@@ -33,6 +33,9 @@ whole ChatGPT account can hit its usage limit:
 
 ```bash
 MODEL=""
+for attempt in 1 2; do                      # right at a usage reset the first probe can fail without the limit message
+[ -n "$MODEL" ] && break
+[ "$attempt" = 2 ] && sleep 60
 for m in $GPT_REVIEWERS; do
   out=$(codex exec -m "$m" --skip-git-repo-check -s read-only "reply with exactly: OK" </dev/null 2>&1)
   if echo "$out" | grep -q "usage limit"; then
@@ -41,6 +44,7 @@ for m in $GPT_REVIEWERS; do
   fi
   # success = the model actually answered; anything else (plan-gated, transient error) → next
   if echo "$out" | grep -qx "OK"; then MODEL=$m; break; fi
+done
 done
 EFFORT=xhigh   # flagship; use high for an older fallback
 echo "reviewer: ${MODEL:-NONE}"
